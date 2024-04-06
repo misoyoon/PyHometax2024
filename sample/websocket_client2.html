@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Content Display</title>
+    <style>
+        #content {
+            height: 300px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" name="filename" id="filename" value="E:/FILESVR/TaxAssist/Log/taxassist2.log" size="50">
+    <a href="javascript: start()">시작</a>
+    <a href="javascript: end()">종료</a>
+    <div id="content"></div>
+    <script>
+        var socket = null;
+        function end() {
+
+            socket.close()
+        }
+
+        function start() {
+            // WebSocket 연결
+            //var filename = 'E:/FILESVR/TaxAssist/Log/taxassist2.log';
+            const filename = document.getElementById('filename').value;
+
+            const url = `ws://localhost:8765?filename=${encodeURIComponent(filename)}`;
+            console.log ('url=', url)
+            socket = new WebSocket(url);
+
+            // 서버에서 파일의 변경 내용을 받아와 화면에 추가하는 함수
+            socket.onmessage = function(event) {
+                const content = event.data;
+                document.getElementById('content').innerText += content;
+                // 스크롤되면서 최신 내용을 보여주도록 스크롤 위치 조정
+                document.getElementById('content').scrollTop = document.getElementById('content').scrollHeight;
+            }
+
+            socket.onclose = () => {
+                console.log("socket is closed ....")
+                socket.close()
+            }
+        }
+    </script>
+</body>
+</html>

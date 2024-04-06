@@ -1,0 +1,169 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+    
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "1단계 실행",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\at_ht_step_1.py",
+            "console": "integratedTerminal",
+            "env": {},
+            "debugOptions": [
+            ],
+            "args": ["S1", "A01", "the1"] 
+        }, 
+        {
+            "name": "Agent 실행",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\gb_agent.py",
+            "console": "integratedTerminal",
+            "env": {},
+            "debugOptions": [
+            ],
+            "args": [""] 
+        }, 
+        {
+            "name": "3단계_위택스_신고(2024)",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\at_ht_step_3.py",
+            "console": "integratedTerminal",
+            "env": {},
+            "debugOptions": [
+            ],
+            "args": ["S1", "A01", "the1"] 
+        }, 
+        {
+            "name": "4단계_위택스_문서다운(2024)",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\at_ht_step_4.py",
+            "console": "integratedTerminal",
+            "env": {},
+            "debugOptions": [
+            ],
+            "args": ["S1", "A01", "the1"] 
+        }, 
+        {
+            "name": "6단계_고객통지(2024)",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\at_ht_step_6.py",
+            "console": "integratedTerminal",
+            "env": {},
+            "debugOptions": [
+            ],
+            "args": ["S1", "A01", "the1"] 
+        }, 
+        {
+            "name": "법정동 구하기 테스트",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\util\\addr_legal_test.py",
+            "console": "integratedTerminal",
+            "env": {},
+            "debugOptions": [
+            ],
+            "args": [""] 
+        }, 
+        {
+            "name": "위택스_전자파일생성",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\layout_wetax_test.py",
+            "console": "integratedTerminal",
+            "env": {},
+            "debugOptions": [
+            ],
+            "args": [""] 
+        },        
+        {
+            "name": "1단계-홈택스신고",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\main_auto_step_1.py",
+            "console": "integratedTerminal",
+            "env": {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"},
+            "debugOptions": [
+            ],
+            "args": ["강솔이"] 
+        },
+        {
+            "name": "2단계-홈택스다운로드",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\main_auto_step_2.py",
+            "console": "integratedTerminal",
+            "env": {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"},
+            "debugOptions": [
+            ],
+            "args": ["남기준"] 
+        },        
+        {
+            "name": "3단계-위택스신고",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\main_auto_step_3.py",
+            "console": "integratedTerminal",
+            "env": {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"},
+            "debugOptions": [
+            ],
+            "args": ["남기준"] 
+        }, 
+        {
+            "name": "4단계-위택스 다운로드",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\main_auto_step_4.py",
+            "console": "integratedTerminal",
+            "env": {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"},
+            "debugOptions": [
+            ],
+            "args": ["관리자"] 
+        }, 
+        {
+            "name": "5단계-홈택스 증빙자료업로드",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\main_auto_step_5.py",
+            "console": "integratedTerminal",
+            "env": {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"},
+            "debugOptions": [
+            ],
+        },        
+        {
+            "name": "홈택스 증빙자료업로드",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\main_auto_step_5.py",
+            "console": "integratedTerminal",
+            "env": {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"},
+            "debugOptions": [
+            ],
+        },        
+        {
+            "name": "위택스 신고내역 다운로드",
+            "type": "python",
+            "request": "launch",
+            "program": "pyHometax\\위택스_신고서제출목록_조회.py",
+            "console": "integratedTerminal",
+            "env": {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"},
+            "debugOptions": [
+            ],
+        },        
+
+    ]
+}

@@ -1,0 +1,73 @@
+
+
+
+
+완전자동화 -> 4단계(위택스 다운로드) 완료 후 실행
+    2,4단계(문자 다운로드) 점검
+    홈택스접수증, 위택스접수증(PDF)의 이름 및 금액 확인
+    메일발송자료에 대한 메일 발송(일부는 등기발송)
+    카카오 알림톡 발송 (시간은 가급적 9~18시 이내로)
+
+
+
+5단계 - 증빙자료
+    attach_file_type_cd : SOURCE,  source.pdf 파일은 PyImport에 의해 기본적으로 생성된 원본 PDF 파일은
+        => 다만 소스PDF는 복수개가 될 수 있기 때문에 최종적으로는 source_upload.pdf 라는 파일로 모든 소스PDF를 merge한다.
+        => 최종 증빙자료는 source_upload.pdf 하나를 업로드
+        => 다만 홈택스에서는 최대 50MB까지만 가능하기 때문에 50MB이상은 수동으로 올리는 작업을 진행하고 있음
+
+
+
+
+홈택스 2단계
+납부서 클릭 -> 파일 다운로드  (최 좌측상단 이미지 클릭)
+    function _x(STR_XPATH) {
+        var xresult = document.evaluate(STR_XPATH, document, null, XPathResult.ANY_TYPE, null);
+        var xnodes = [];
+        var xres;
+        while (xres = xresult.iterateNext()) {
+            xnodes.push(xres);
+        }
+
+        return xnodes;
+    }
+    $(_x('/html/body/div/div/div[1]/table/tbody/tr/td/div/nobr/button[1]')).click()
+    $(_x('/html/body/div/div[2]/div[1]/button[1]')).click()
+
+접수증
+    $(_x('/html/body/div/div/div[1]/table/tbody/tr/td/div/nobr/button[2]')).click()
+
+
+
+DB 필드 변경 내역
+
+-- 문자발송이력
+ALTER TABLE sms_history ADD sender_source varchar(1) DEFAULT 'M' NULL COMMENT '전송_소스 : M(수동발송), A(자동발송)';
+
+
+
+-- 자동 알림톡, 메일 발송 컨트롤 용도
+ALTER TABLE ht_tt MODIFY COLUMN au6 varchar(1) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL NULL COMMENT '자동 알림톡발송';
+ALTER TABLE ht_tt MODIFY COLUMN au6_msg varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL NULL COMMENT '자동 알림톡발송 메세지';
+ALTER TABLE ht_tt ADD au7 varchar(1) NULL COMMENT '자동 메일발송';
+ALTER TABLE ht_tt CHANGE au7 au7 varchar(1) NULL COMMENT '자동 메일발송' AFTER au6;
+ALTER TABLE ht_tt ADD au7_msg varchar(100) NULL COMMENT '자동 메일발송 메세지';
+ALTER TABLE ht_tt CHANGE au7_msg au7_msg varchar(100) NULL COMMENT '자동 메일발송 메세지' AFTER au6_msg;
+ALTER TABLE ht_tt MODIFY COLUMN result1_file_seq int(11) DEFAULT NULL NULL COMMENT '결과 다운로드 - 홈택스 납부계산서';
+ALTER TABLE ht_tt ADD addr_legal_cd varchar(10) NULL COMMENT '법정동코드';
+ALTER TABLE ht_tt CHANGE addr_legal_cd addr_legal_cd varchar(10) NULL COMMENT '법정동코드' AFTER holder_full_addr_post;
+ALTER TABLE ht_tt ADD wetax_region varchar(30) NULL COMMENT '위택스 관할지';
+ALTER TABLE ht_tt ADD au1_req_dt DATETIME NULL COMMENT '1단계 완료 일시';
+ALTER TABLE ht_tt ADD au2_req_dt DATETIME NULL COMMENT '2단계 완료 일시';
+ALTER TABLE ht_tt ADD au3_req_dt DATETIME NULL COMMENT '3단계 완료 일시';
+ALTER TABLE ht_tt ADD au4_req_dt DATETIME NULL COMMENT '4단계 완료 일시';
+ALTER TABLE ht_tt ADD au5_req_dt DATETIME NULL COMMENT '5단계 완료 일시';
+ALTER TABLE ht_tt ADD au6_req_dt DATETIME NULL COMMENT '6단계 완료 일시';
+ALTER TABLE ht_tt ADD au7_req_dt DATETIME NULL COMMENT '7단계 완료 일시';
+
+
+
+- user 홈택스 세션
+ALTER TABLE `user` ADD txpp_session_id varchar(50) NULL COMMENT 'TXPPsessionID';
+ALTER TABLE `user` ADD teht_session_id varchar(50) NULL COMMENT 'TEHTsessionID';
+ALTER TABLE `user` ADD cookie_modi_dt DATETIME NULL COMMENT '홈텍스 세션 최근 Access Time';

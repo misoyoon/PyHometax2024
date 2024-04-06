@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Content Display</title>
+    <style>
+        #content {
+            height: 300px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <div id="content"></div>
+
+    <script>
+        // WebSocket 연결
+        const socket = new WebSocket('ws://localhost:8765');
+
+        // 서버에서 파일의 변경 내용을 받아와 화면에 추가하는 함수
+        socket.onmessage = function(event) {
+            const content = event.data;
+            document.getElementById('content').innerText += content;
+            // 스크롤되면서 최신 내용을 보여주도록 스크롤 위치 조정
+            document.getElementById('content').scrollTop = document.getElementById('content').scrollHeight;
+        };
+
+        // 서버로 파일 요청을 보내는 함수
+        function requestFile(filename) {
+            const data = JSON.stringify({ filename: filename });
+            socket.send(data);
+        }
+
+        // 페이지 로드 시 파일 요청
+        window.onload = function() {
+            let filename = 'E:\\FILESVR\\TaxAssist\\Log\\taxassist.log'; // 클라이언트가 요청하는 파일명
+            requestFile(filename);
+        };
+    </script>
+</body>
+</html>

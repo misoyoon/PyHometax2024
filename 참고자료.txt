@@ -1,0 +1,34 @@
+- 프로젝트 폴더 이동 후
+python -m pip install --upgrade pip
+
+
+202405 찾아 일괄수정
+'20230101', '20231221' 찾아 수정
+
+
+auto_svr1
+    pcadm / !R!
+    192.168.0.200
+    61.38.105.226
+
+gby_svr2
+    suadmin / !R!
+    192.168.0.180
+    61.38.105.227
+
+gby_svr3
+    gbyadm / !R
+    192.168.0.181
+    61.38.105.228
+
+gby_nam
+    nasadmin / !gbY$0913#A 
+    182.168.0.210
+
+
+네트워크 드라이브,  taxweb / !R~
+    u:  => \\gby_nas\taxweb
+        U:\TaxAssist\files
+    v:  => \\gby_nas\pyauto
+        V:\PyHometax2024
+

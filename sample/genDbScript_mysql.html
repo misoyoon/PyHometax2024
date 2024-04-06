@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DB script Generator</title>
+<script
+  src="https://code.jquery.com/jquery-1.12.4.js"
+  integrity="sha256-Qw82+bXyGq6MydymqBxNPYTaUXXq7c8v3CwiYwLLNXU="
+  crossorigin="anonymous"></script>
+
+<script>
+	
+var indent = "    ";
+var gTableDesc = "";  // 첫 줄에 있는 테이블 설명
+var gProgramId = "";
+
+if (typeof String.prototype.toCamel !== 'function') {
+	String.prototype.toCamel = function() {
+		return this.toLowerCase().replace(/[-_]([a-z])/g, function (g) {return g[1].toUpperCase(); })
+	};
+}
+
+
+$(document).ready(function() {
+	$("#columnList").attr("rows", "20").attr("cols", "100");
+	
+	// 생성 버튼
+	$("#btnCommit").click(function() {
+		// 프로그램 ID
+		var tmpProgramId = $("#programId").val();
+		if (tmpProgramId.length>0) {
+			gProgramId = tmpProgramId;
+		}
+		else {
+			gProgramId = "R01001";
+		}
+		
+		// 데이터 분석
+		var rows = parse( $("#columnList").val() );
+	
+		// 높이 조정하기
+		$("textarea").attr("rows", rows+3).attr("cols", "150")
+	})
+});
+
+
+/*
+	필드 순서
+	----------------------------
+	
+ 
+ */
+function parse(columnInfo) {
+	var lines = columnInfo.split("\n");
+	var colList = [];
+	for (var i=0; i<lines.length; i++) {
+		var line = lines[i].trim();
+		
+		if (line=="") continue;
+		
+		var arrColumnInfo = line.split("\t");
+		
+		if (i==0 && arrColumnInfo.length==1) {
+			gTableDesc = arrColumnInfo[0];
+			continue;
+		}
+		else if (i==0 && arrColumnInfo.length==0) {
+			gTableDesc = "";
+		}
+			
+	
+		var colDesc    = arrColumnInfo[9];  // 물리명
+		var colName    = arrColumnInfo[0];	// 논리명
+		var colDomain  = arrColumnInfo[0];	// 도메인
+		var colType    = arrColumnInfo[2];  // 데이터 타입
+
+		if (colName.indexOf("(")>=0) {
+			colName = colName.substring(0, colName.indexOf("("));
+		}
+
+		if (colType.indexOf("(")>=0) {
+			colType = colType.substring(0, colType.indexOf("("));
+		}
+		
+		var colCamel   = colName.toCamel();
+		//var colVariant = "#{"+colCamel+"}";  //데이터 카엘 사용시
+		var colVariant = "#{"+colName.toLowerCase()+"}";  // 필드명 소문자
+		
+		console.log(i, colDesc, colName, colType, colCamel)
+		
+		var item = {
+			"name"  : colName,
+			"camel" : colCamel,
+			"domain": colDomain,
+			"desc"  : colDesc,
+			"type"  : colType,
+			"valEx" : colVariant
+		}
+		
+		colList.push(item);
+	}
+	
+	var nameSpace  = $("#nameSpace").val();
+	var script0 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n"
+				+ "<!DOCTYPE mapper \n"
+				+ "    PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\"\n"
+				+ "    \"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n";
+				
+				
+	var script1 = makeSelectScript(colList);
+	var script2 = makeInserScript (colList);
+	var script3 = makeUpdateScript(colList);
+	var script4 = makeDeleteScript(colList);
+	var script5 = makeEtcScript(colList);
+	var script6 = makeClassScript(colList);
+	
+	var scriptAll =   script0 + "\n\n";
+	scriptAll += "<mapper namespace=\""+ nameSpace + "." + gProgramId + "DAO\">\n\n";
+	scriptAll +=  script1 + "\n\n\n";
+	scriptAll +=  script2 + "\n\n\n";
+	scriptAll +=  script3 + "\n\n\n";
+	scriptAll +=  script4 + "\n\n\n";
+	scriptAll += "</mapper>\n"
+	
+	$("#resultAll").val(scriptAll);
+	$("textarea").attr("rows", 50);
+	
+	return colList.length;
+}
+
+function makeSelectScript(colList) {
+	var nameSpace  = $("#nameSpace").val();
+	var tableName  = $("#tableName").val().toUpperCase();
+	var tableAlias = $("#tableAlias").val().toUpperCase();
+	var tableAlias2 = "";
+	
+	if (tableAlias.length>0) tableAlias2 = tableAlias+"."
+	
+	var script = "";
+	var script1 = "";
+	var scriptCol = "";
+
+	script1 = "<!-- "+gTableDesc+" -->\n"
+			+ "<select id=\"select"+gProgramId+"\" parameterType=\"map\" resultType=\"map\">\n"
+			+ "/* " + nameSpace + "." + gProgramId + "DAO.select" + gProgramId + " */\n\n"
+			+ "SELECT \n";
+			
+	for (var i=0; i<colList.length; i++) {
+		if (i==0) {
+			scriptCol += indent + "  ";
+		}
+		else {
+			scriptCol += indent + ", ";
+		}
+		
+		scriptCol += tableAlias2 + colList[i].name + padding(colList[i].name) + "/* " + colList[i].desc + " */ \n";
+	}
+	
+	script = script1 + scriptCol + "FROM " + tableName + " " + tableAlias+ "\n";
+	script += "WHERE " + tableAlias2 + colList[0].name + " = " +  colList[0].valEx + "\n";
+	script += "</select>";
+		
+	$("#resultSelect").val(script);
+	
+	return script;
+}
+
+
+
+function makeInserScript(colList) {
+	var nameSpace  = $("#nameSpace").val();
+	var tableName = $("#tableName").val().toUpperCase();
+	
+	var script = "";
+	var script1 = "";
+	var scriptCol = "";
+	var scriptVal = "";
+
+	script1 = "<!-- "+gTableDesc+" -->\n"
+			+ "<insert id=\"insert"+gProgramId+"\" parameterType=\"map\">\n"
+			+ "/* " + nameSpace + "." + gProgramId + "DAO.insert" + gProgramId + " */\n\n"
+			+ "INSERT INTO " + tableName + " ( \n";
+	
+	var printedCnt = 0;  // 출력된 건수 (컴마 출력 관련)
+	for (var i=0; i<colList.length; i++) {
+		// PK처리
+		try {
+			if (colList[i].desc.toUpperCase().indexOf('PK') >= 0) {
+				continue;
+			}
+		}catch(e) {
+			continue;
+		}
+		
+		if (colList[i].name.toUpperCase() == "MODI_ID") {
+			continue;
+			//scriptCol += "-- ";
+			//scriptVal += "-- ";
+		}
+		else if (colList[i].name.toUpperCase() == "MODI_DT") {
+			continue;
+			//scriptCol += "-- ";
+			//scriptVal += "-- ";
+		} 
+
+		if (printedCnt==0) {
+			scriptCol += indent + "  ";
+			scriptVal += indent + "  ";
+		}
+		else {
+			scriptCol += indent + ", ";
+			scriptVal += indent + ", ";
+		}
+		
+		scriptCol += colList[i].name + padding(colList[i].name) + "/* " + colList[i].desc + " */ \n";
+		
+		// 특별히 다른 용도로 변경시 수정할 것
+		var modifiedEx = colList[i].valEx;
+		if (colList[i].name.toUpperCase() == "REG_DT") modifiedEx = "CURRENT_TIMESTAMP";
+		else if (colList[i].name.toUpperCase() == "MODI_DT") modifiedEx = "CURRENT_TIMESTAMP";
+		//else if (colList[i].name == "IF_DE") modifiedEx = "CONVERT(NVARCHAR(10), NOW(), 112)";
+		//else if (colList[i].name == "IF_SN") modifiedEx = "(SELECT ISNULL(MAX(IF_SN), 0) + 1 FROM "+tableName+" WHERE IF_DE = CONVERT(NVARCHAR(10), NOW(), 112) AND UUID = #{uuid})";
+		
+		scriptVal += modifiedEx + "\n";
+		
+		printedCnt++;
+	}
+	
+	script = script1 + scriptCol + ")\nVALUES (\n" + scriptVal + ")\n";
+	script += "</insert>\n";
+	
+	$("#resultInsert").val(script);
+	
+	return script;
+}
+
+
+function makeUpdateScript(colList) {
+	var nameSpace  = $("#nameSpace").val();
+	var tableName = $("#tableName").val().toUpperCase();
+	
+	var script = "";
+	var script1 = "";
+	var scriptCol = "";
+
+	
+	script1 = "<!-- "+gTableDesc+" -->\n"
+			+ "<update id=\"update"+gProgramId+"\" parameterType=\"map\">\n"
+			+ "/* " + nameSpace + "." + gProgramId + "DAO.update" + gProgramId + " */\n\n"
+			+ "UPDATE " + tableName + "\nSET\n";
+
+	var printedCnt = 0;  // 출력된 건수 (컴마 출력 관련)
+	for (var i=0; i<colList.length; i++) {
+		// PK처리
+		try {
+			if (colList[i].desc.toUpperCase().indexOf('PK') >= 0) {
+				continue;
+			}
+		}catch(e) {
+			continue;
+		}
+		
+		if (colList[i].name.toUpperCase() == "REG_ID") {
+			continue;
+			//scriptCol += "-- ";
+		}
+		else if (colList[i].name.toUpperCase() == "REG_DT") {
+			continue;
+			//scriptCol += "-- ";
+		} 
+
+		if (printedCnt==0) {
+			scriptCol += indent + "  ";
+		}
+		else {
+			scriptCol += indent + ", ";
+		}
+		
+		var modifiedEx = colList[i].valEx;
+		if (colList[i].name.toUpperCase() == "MODI_DT") modifiedEx = "CURRENT_TIMESTAMP";
+		
+		scriptCol += colList[i].name + padding(colList[i].name) + " = " + modifiedEx + padding(colList[i].name)  + "  /* " + colList[i].desc + " */ \n";
+		
+		printedCnt++;
+	}
+	
+	script = script1 + scriptCol + "WHERE " + colList[0].name + " = " +  colList[0].valEx + "\n";
+	script += "</update>";
+	
+	$("#resultUpdate").val(script);
+	return script;
+}
+
+function makeDeleteScript(colList) {
+	var nameSpace  = $("#nameSpace").val();
+	var tableName = $("#tableName").val().toUpperCase();
+	
+	var script = "";
+	var script1 = "";
+	var scriptCol = "";
+
+	script = "<!-- "+gTableDesc+" -->\n"
+			+ "<delete id=\"delete"+gProgramId+"\" parameterType=\"map\">\n"
+			+ "/* " + nameSpace + "." + gProgramId + "DAO.delete" + gProgramId + " */\n\n"
+			+ "DELETE FROM " + tableName + "\n" 
+			+ "WHERE " + colList[0].name + " = " +  colList[0].valEx + "\n"
+			+ "</delete>\n";
+	
+	
+	$("#resultDelete").val(script);
+	
+	return script;
+}
+
+function makeEtcScript(colList) {
+	var tableName = $("#tableName").val().toUpperCase();
+	
+	var script = "";
+	
+	for (var i=0; i<colList.length; i++) {
+		script += colList[i].name + padding(colList[i].name.toLowerCase(), 30) 
+					+ " | " + colList[i].name.toUpperCase() + padding(colList[i].name, 30) 
+					+ " | " + colList[i].camel + padding(colList[i].camel, 30) 
+					+ " | " + colList[i].valEx + padding(colList[i].valEx, 30)  
+					+ " | " + colList[i].desc + "\n";
+	}
+	
+	$("#resultEtc").val(script);
+	return script;
+}
+
+function makeClassScript(colList) {
+	var tableName = $("#tableName").val().toUpperCase();
+	
+	var script = "@Entity\n@Getter\n@Setter\n";
+	script += "public class "+ tableName +" {\n";
+	
+	for (var i=0; i<colList.length; i++) {
+		var javaDataType = "XXXX    ";
+		
+		if (colList[i].type.toUpperCase().indexOf("INT") == 0 )
+			javaDataType = "int     ";
+		else if (colList[i].type.toUpperCase().indexOf("BIG") == 0 )
+			javaDataType = "long    ";			
+		else if (colList[i].type.toUpperCase().indexOf("VARCHAR") == 0 || colList[i].type.indexOf("NVARCHAR") == 0)
+			javaDataType = "String  ";
+		else if (colList[i].type.toUpperCase().indexOf("CHAR") == 0)
+			javaDataType = "String  ";
+		else if (colList[i].type.toUpperCase().indexOf("DATE") == 0)
+			javaDataType = "Date    ";
+		else if (colList[i].type.toUpperCase() == "FLOAT")
+			javaDataType = "float   ";
+		else if (colList[i].type.toUpperCase() == "DOUBLE")
+			javaDataType = "double  ";
+		
+	
+		if (colList[i].domain == "순번" || colList[i].domain.toUpperCase() == "ID")
+			javaDataType = "LONG ";
+		if (colList[i].domain == "여부" || colList[i].domain == "유무")
+			javaDataType = "boolean ";
+		
+		
+		
+		script +="\t" + javaDataType + colList[i].camel + ";\n";
+	}
+	
+	script += "}";
+	
+	$("#resultClass").val(script);
+	return script;
+}
+
+function padding(str, len) {
+	str = str||'';
+	len = len || 30;
+	var paddingSize = len - str.length;
+	var retVal = "";
+	for (var i=0; i<paddingSize; i++) {
+		retVal += " ";
+	}
+	
+	return retVal;
+}
+
+</script>
+</head>
+<body>
+DB script Generator </br>
+<hr/>
+	Name Space  : <input type="text" id="nameSpace" value="com.jnk.taxweb.repository">  <br/>
+	Table Name  : <input type="text" id="tableName" value="CALC_BOARD"> FROM절 사용 <br/>
+	Table Alias : <input type="text" id="tableAlias" value="A"> <span>*생략가능</span> <br/>
+	Program ID  : <input type="text" id="programId" value="CalcBoard"> CalcBoard => selectCalcBoard
+	<button id="btnCommit">생성</button> 
+	<br/>
+	<br/>
+	
+	Column List <br/>
+	<h3>*라인시작 빈공간없도록 입력/ 첫라인은 테이블 Desc입력</h3>
+
+	<div class="wrapper">
+	<textarea id="columnList" style="width:100%;" >양도소득신고
+seq	1	int(11)	true	false	PRI	[NULL]			PK
+status_modi_dt	2	datetime	false	false	[NULL]	[NULL]			
+holder_name	3	varchar(50)	false	false	[NULL]	[NULL]			주주 성명
+holder_ssn	4	varchar(12)	false	false	[NULL]	[NULL]			주주 주민번호 (숫자만)
+holder_full_addr	5	varchar(45)	false	false	[NULL]	[NULL]			주주 전체주소
+holder_addr1	6	varchar(45)	false	false	[NULL]	[NULL]			시,도
+holder_addr2	7	varchar(45)	false	false	[NULL]	[NULL]			시,군,구
+holder_addr3	8	varchar(45)	false	false	[NULL]	[NULL]			동, 읍
+holder_addr4	9	varchar(45)	false	false	[NULL]	[NULL]			건물번호
+holder_addr5	10	varchar(45)	false	false	[NULL]	[NULL]			기타 주소
+load_name_addr_yn	11	varchar(1)	false	false	[NULL]	[NULL]			도로명주소 Y/N
+holder_addr_audit_yn	12	varchar(1)	false	false	[NULL]	[NULL]			주주 주소 검증여부 Y/N
+holder_zip_num	13	varchar(45)	false	false	[NULL]	[NULL]			주주 우편번호
+holder_tel	14	varchar(45)	false	false	[NULL]	[NULL]			주주 전화번호
+holder_email	15	varchar(45)	false	false	[NULL]	[NULL]			주주 이메일
+financial_name	16	varchar(50)	false	false	[NULL]	[NULL]			금융기관명
+financial_biz_num	17	varchar(12)	false	false	[NULL]	[NULL]			금융기관 사업자등록번호(숫자만)
+financial_address	18	varchar(200)	false	false	[NULL]	[NULL]			금융기관 주소
+financial_branch_name	19	varchar(12)	false	false	[NULL]	[NULL]			지점명
+financial_manager	20	varchar(12)	false	false	[NULL]	[NULL]			담당자
+account_num	21	varchar(20)	false	false	[NULL]	[NULL]			계좌번호
+stock_name	22	varchar(100)	false	false	[NULL]	[NULL]			(1)주식종목명
+biz_num	23	varchar(12)	false	false	[NULL]	[NULL]			(2)사업자등록번호 (숫자만)
+domestic_foreign	24	varchar(4)	false	false	[NULL]	[NULL]			(3)국내/국외 구분
+item_class_cd	25	varchar(12)	false	false	[NULL]	[NULL]			양도물건 종류 코드
+tax_rate_cd	26	varchar(12)	false	false	[NULL]	[NULL]			세율구분
+stock_class_cd	27	varchar(12)	false	false	[NULL]	[NULL]			(4) 주식등 종류코드
+transfer_type	28	varchar(12)	false	false	[NULL]	[NULL]			(5) 양도유형
+acquisition_type	29	varchar(12)	false	false	[NULL]	[NULL]			(6)취득유형
+transfer_stock_qnt	30	varchar(20)	false	false	[NULL]	[NULL]			(7)양도주식수 (소수점포함)
+transfer_stock_qnt2	31	int(11)	false	false	[NULL]	[NULL]			(7)양도주식수 (정수로수정)
+transfer_date	32	varchar(12)	false	false	[NULL]	[NULL]			(8)양도일자
+transfer_price	33	bigint(20)	false	false	[NULL]	[NULL]			(9)주당양도가액
+total_transfer_price	34	bigint(20)	false	false	[NULL]	[NULL]			(10)양도가액 ((7)×(9))
+acquisition_date	35	varchar(12)	false	false	[NULL]	[NULL]			(11)취득일자
+acquisition_price	36	bigint(20)	false	false	[NULL]	[NULL]			(12)주당취득가액
+total_acquisition_price	37	bigint(20)	false	false	[NULL]	[NULL]			(13)취득가액 ((7)×(12))
+expenses	38	bigint(20)	false	false	[NULL]	[NULL]			(14)필요경비
+expenses2	39	bigint(20)	false	false	[NULL]	[NULL]			(14)필요경비(주식양도수량 정수화에 따른 비용변경)
+tax_free_income_amount	40	bigint(20)	false	false	[NULL]	[NULL]			비과세 양도소득금액
+reduced_income_amount	41	bigint(20)	false	false	[NULL]	[NULL]			(16) 감면소득금액
+redution_class	42	varchar(12)	false	false	[NULL]	[NULL]			(17)감면종류
+redution_rate	43	bigint(20)	false	false	[NULL]	[NULL]			(17) 감면율
+postpone_yn	44	varchar(1)	false	false	[NULL]	[NULL]			(18) 과세이연 여부
+total_income_amount	45	bigint(20)	false	false	[NULL]	[NULL]			(4)양도소득금액
+prereported_total_income_amount	46	bigint(20)	false	false	[NULL]	[NULL]			(5)기신고  결정/경정된 양도소득금액 합계
+reduction_income_amount	47	bigint(20)	false	false	[NULL]	[NULL]			(6)소득감면대상소득금액
+income_amount_credit	48	bigint(20)	false	false	[NULL]	[NULL]			(7)양도소득기본공제
+tax_reduction	49	bigint(20)	false	false	[NULL]	[NULL]			(11) 감면세액
+foreign_tax_credit	50	bigint(20)	false	false	[NULL]	[NULL]			(12) 외국납부세액공제
+withholding_credit	51	bigint(20)	false	false	[NULL]	[NULL]			(13) 원천징수세액공제
+electronic_report_credit	52	bigint(20)	false	false	[NULL]	[NULL]			(14) 전자신고세액공제
+penalty_tax_without_report	53	bigint(20)	false	false	[NULL]	[NULL]			(15) 가산세_무(과소)신고
+penalty_tax_delay_payment	54	bigint(20)	false	false	[NULL]	[NULL]			(15) 가산세_납부지연
+penalty_tax_dishonesty	55	bigint(20)	false	false	[NULL]	[NULL]			(15) 가산세_기장불성실
+prereported_deduction	56	bigint(20)	false	false	[NULL]	[NULL]			(16) 기신고 결정/경정세액,조정공제
+income_tax_reduction	57	bigint(20)	false	false	[NULL]	[NULL]			(21) 소득세감면세액
+revised_report_penalty_tax	58	bigint(20)	false	false	[NULL]	[NULL]			(24) 수정신고가산세등
+prereported_fixed_revised_tax	59	bigint(20)	false	false	[NULL]	[NULL]			(25) 기신고·결정·경정세액
+tax_base	60	bigint(20)	false	false	[NULL]	[NULL]			과세표준
+refund_financial_name	61	varchar(45)	false	false	[NULL]	[NULL]			환급금 금융기관명
+refund_account_num	62	varchar(45)	false	false	[NULL]	[NULL]			
+reg_id	63	varchar(20)	false	false	[NULL]	[NULL]			등록자ID
+modi_id	64	varchar(20)	false	false	[NULL]	[NULL]			수정자ID
+reg_dt	65	datetime	false	false	[NULL]	CURRENT_TIMESTAMP			등록일시
+modi_dt	66	datetime	false	false	[NULL]	[NULL]			최근수정일시
+		
+	
+	</textarea>
+	<br/>
+		
+	All Script <br/>
+	<textarea id="resultAll" style="width:100%;"></textarea>
+	<br/>
+	
+	Select Script <br/>
+	<textarea id="resultSelect" style="width:100%;"></textarea>
+	<br/>
+	Insert Script <br/>
+	<textarea id="resultInsert" style="width:100%;"></textarea>
+	<br/>
+	
+	Update Script <br/>
+	<textarea id="resultUpdate" style="width:100%;"></textarea>
+	<br/>
+	
+	Delete Script <br/>
+	<textarea id="resultDelete" style="width:100%;"></textarea>
+	<br/>
+	
+	ETC INFO <br/>
+	<textarea id="resultEtc" style="width:100%;"></textarea>
+	<br/>
+
+	CLASS <br/>
+	<textarea id="resultClass" style="width:100%;"></textarea>
+	<br/>
+	</div>
+</body>
+</html>

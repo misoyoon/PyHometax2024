@@ -1,0 +1,4 @@
+/venv38/
+.pyhometax/**
+test/__pycache__/**
+pyHometax/__pycache__/**
