@@ -1,6 +1,7 @@
-
-
-
+홈페이지에서 "홈택스신고" REPORT를 할때
+    => ht_tt_file 타입이 HOMETAX_UPLOAD으로 hometax_upload.xls이 생성
+    => 모든 SOURCE에 해당하는 PDF 파일이 하나로 합쳐짐 => source_upload.pdf  (DB에는 따로 기록하지 않음, 파일로만 존재)
+    => 주소 검증 및 우편번호 조회
 
 완전자동화 -> 4단계(위택스 다운로드) 완료 후 실행
     2,4단계(문자 다운로드) 점검
@@ -49,10 +50,6 @@ ALTER TABLE sms_history ADD sender_source varchar(1) DEFAULT 'M' NULL COMMENT '�
 -- 자동 알림톡, 메일 발송 컨트롤 용도
 ALTER TABLE ht_tt MODIFY COLUMN au6 varchar(1) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL NULL COMMENT '자동 알림톡발송';
 ALTER TABLE ht_tt MODIFY COLUMN au6_msg varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL NULL COMMENT '자동 알림톡발송 메세지';
-ALTER TABLE ht_tt ADD au7 varchar(1) NULL COMMENT '자동 메일발송';
-ALTER TABLE ht_tt CHANGE au7 au7 varchar(1) NULL COMMENT '자동 메일발송' AFTER au6;
-ALTER TABLE ht_tt ADD au7_msg varchar(100) NULL COMMENT '자동 메일발송 메세지';
-ALTER TABLE ht_tt CHANGE au7_msg au7_msg varchar(100) NULL COMMENT '자동 메일발송 메세지' AFTER au6_msg;
 ALTER TABLE ht_tt MODIFY COLUMN result1_file_seq int(11) DEFAULT NULL NULL COMMENT '결과 다운로드 - 홈택스 납부계산서';
 ALTER TABLE ht_tt ADD addr_legal_cd varchar(10) NULL COMMENT '법정동코드';
 ALTER TABLE ht_tt CHANGE addr_legal_cd addr_legal_cd varchar(10) NULL COMMENT '법정동코드' AFTER holder_full_addr_post;
@@ -63,7 +60,7 @@ ALTER TABLE ht_tt ADD au3_req_dt DATETIME NULL COMMENT '3단계 완료 일시';
 ALTER TABLE ht_tt ADD au4_req_dt DATETIME NULL COMMENT '4단계 완료 일시';
 ALTER TABLE ht_tt ADD au5_req_dt DATETIME NULL COMMENT '5단계 완료 일시';
 ALTER TABLE ht_tt ADD au6_req_dt DATETIME NULL COMMENT '6단계 완료 일시';
-ALTER TABLE ht_tt ADD au7_req_dt DATETIME NULL COMMENT '7단계 완료 일시';
+
 
 
 

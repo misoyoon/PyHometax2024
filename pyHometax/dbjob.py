@@ -139,8 +139,6 @@ def update_htTt_aux_running(ht_tt_seq, au_x) :
         sql += ' SET au5 = %s'
     elif au_x == '6':
         sql += ' SET au6 = %s'
-    elif au_x == '7':
-        sql += ' SET au7 = %s'
     
     sql += ' WHERE  ht_tt_seq=%s'
 
@@ -586,8 +584,6 @@ def update_HtTt_AuX(au_x, ht_tt_seq, au_status, au_message="") :
         sql = 'UPDATE ht_tt SET au5=%s, au5_msg=%s WHERE ht_tt_seq=%s'
     elif au_x == '6':
         sql = 'UPDATE ht_tt SET au6=%s, au6_msg=%s WHERE ht_tt_seq=%s'
-    elif au_x == '7':
-        sql = 'UPDATE ht_tt SET au7=%s, au7_msg=%s WHERE ht_tt_seq=%s'
 
     with conn.cursor() as curs:        
         common.logqry(sql, param)

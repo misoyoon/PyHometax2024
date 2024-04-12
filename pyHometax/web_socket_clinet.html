@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Example</title>
+    <style>
+        .output-container {
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="filenameInputs">
+        <div>
+            <input type="text" class="filenameInput" placeholder="파일명 입력">
+            <button onclick="startWebSocket(event)">시작</button>
+            <button onclick="stopWebSocket(event)">정지</button>
+        </div>
+    </div>
+    <button onclick="addInput()">추가생성</button>
+
+    <div id="outputContainers"></div>
+
+    <script>
+        let websockets = [];
+
+        function startWebSocket(event) {
+            const parentDiv = event.target.parentElement;
+            const index = Array.from(parentDiv.parentNode.children).indexOf(parentDiv);
+            const websocket = websockets[index];
+            if (websocket) {
+                alert("이미 시작되었습니다.");
+                return;
+            }
+
+            const filenameInput = parentDiv.querySelector(".filenameInput");
+            const filename = filenameInput.value;
+            if (!filename) {
+                alert("파일명을 입력해주세요.");
+                return;
+            }
+
+            const outputContainer = document.createElement("div");
+            outputContainer.className = "output-container";
+            outputContainer.innerHTML = `<pre class="output"></pre>`;
+            document.getElementById("outputContainers").appendChild(outputContainer);
+
+            const outputElement = outputContainer.querySelector(".output");
+
+            const newWebSocket = new WebSocket("ws://localhost:18889?filename=" + encodeURIComponent(filename));
+            websockets[index] = newWebSocket;
+
+            newWebSocket.onopen = function(event) {
+                console.log("WebSocket 연결 성공!");
+            };
+
+            newWebSocket.onmessage = function(event) {
+                outputElement.textContent += event.data + "\n";
+                outputContainer.scrollTop = outputContainer.scrollHeight; // 스크롤을 자동으로 내려줘요.
+            };
+        }
+
+        function stopWebSocket(event) {
+            const parentDiv = event.target.parentElement;
+            const index = Array.from(parentDiv.parentNode.children).indexOf(parentDiv);
+            const websocket = websockets[index];
+            if (websocket) {
+                websocket.close();
+                console.log("WebSocket 연결 종료됨.");
+                websockets[index] = null;
+            } else {
+                console.log("WebSocket 연결 없음.");
+            }
+        }
+
+        function addInput() {
+            const filenameInputs = document.getElementById("filenameInputs");
+            const newDiv = document.createElement("div");
+            newDiv.innerHTML = `
+                <input type="text" class="filenameInput" placeholder="파일명 입력">
+                <button onclick="startWebSocket(event)">시작</button>
+                <button onclick="stopWebSocket(event)">정지</button>
+            `;
+            filenameInputs.appendChild(newDiv);
+        }
+    </script>
+</body>
+</html>
