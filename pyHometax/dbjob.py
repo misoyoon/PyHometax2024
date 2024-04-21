@@ -44,7 +44,6 @@ def connect_db():
 # GBY_AGENT 관련 (시작)
 # ====================================================================================================================
 
-
 def select_autoManager_by_id(auto_manager_id) :
     param = (auto_manager_id, )
     # SQL문 실행
@@ -58,16 +57,17 @@ def select_autoManager_by_id(auto_manager_id) :
         LEFT JOIN user u ON u.id = a.worker_id
     WHERE  auto_manager_id=%s
     '''
-    
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
-    
-        # 데이타 Fetch
-        row = curs.fetchone()
-        conn.commit()
-        return row
-
+    try:
+        with conn.cursor() as curs:
+            common.logqry(sql, param)
+            curs.execute(sql, param)
+        
+            # 데이타 Fetch
+            row = curs.fetchone()
+            conn.commit()
+            return row
+    except Exception as e:
+        print(f"오류 발생: {e}")
 
 # 현재는 사용 안함
 def insert_auto_manager(server_id, agent_id, task_id, worker_id, au_x, pid, remark="") :
@@ -76,11 +76,16 @@ def insert_auto_manager(server_id, agent_id, task_id, worker_id, au_x, pid, rema
         INSERT INTO auto_manager (server_id, agent_id, task_id, worker_id, au_x, pid, remark)
         VALUES(%s, %s, %s, %s, %s, %s, %s)
     """
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
-        conn.commit()
-
+    
+    try:
+        with conn.cursor() as curs:
+            common.logqry(sql, param)
+            curs.execute(sql, param)
+            conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"오류 발생: {e}")
+        
 def update_autoManager_statusCd(auto_manager_id, status_cd, remark='') :
     param = (status_cd, auto_manager_id)
     sql = '''
@@ -94,11 +99,16 @@ def update_autoManager_statusCd(auto_manager_id, status_cd, remark='') :
         
     sql += '   WHERE  auto_manager_id=%s'
     
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
-        conn.commit()
-    
+    try:
+        with conn.cursor() as curs:
+            common.logqry(sql, param)
+            curs.execute(sql, param)
+            conn.commit()
+    except Exception as e:
+        # 변경 사항 롤백
+        conn.rollback()
+        print(f"오류 발생: {e}")
+            
 def update_autoManager_hthtSeq(auto_manager_id, ht_tt_seq) :
     #global conn    
     param = (ht_tt_seq, auto_manager_id)
@@ -197,7 +207,7 @@ def select_next_au1(group_id, worker_id, start_seq=0, end_seq=0):
     common.logqry(sql, param)
     
     try:
-        with conn.cursor as curs:
+        with conn.cursor() as curs:
             curs.execute(sql, param)
             rs = curs.fetchone()
             common.logrs(rs)
@@ -227,10 +237,10 @@ def select_next_au2(group_id:str, worker_id:str, start_seq=0, end_seq=0):
             AND step_cd='REPORT' 
             -- AND step_cd='COMPLETE' 
             AND au1='S' 
-            AND ( au2 IS NULL  OR au2 = 'S'
+            AND ( au2 IS NULL OR au2 = 'S'
                 -- OR au2 = 'E'
                 )
-            -- and ht_tt_seq in (29599)
+            and ht_tt_seq in (40000)
     '''
     
     if worker_id and worker_id.upper() != "MANAGER_ID":
@@ -244,7 +254,7 @@ def select_next_au2(group_id:str, worker_id:str, start_seq=0, end_seq=0):
         LIMIT 1
         '''
     common.logqry(sql, param)
-    with conn.cursor as curs:
+    with conn.cursor() as curs:
         curs.execute(sql, param)
         rs = curs.fetchone()
         common.logrs(rs)
@@ -476,7 +486,7 @@ def get_worker_list(group_id, for_one_user) :
         AND id=%s
     '''
     
-    with conn.cursor as curs:
+    with conn.cursor() as curs:
         common.logqry(sql, param)
         curs.execute(sql, param)
         rs = curs.fetchall()

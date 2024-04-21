@@ -1,27 +1,37 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import sys
+from datetime import datetime
+
 from common import *
 import dbjob
 import auto_login 
-import sele_common as sc
+import common_sele as sc
 #import auto_login_위택스 as auto_login_wetax
 
 if len(sys.argv) < 4:
     loge("실행 Parameter가 정상적이지 않습니다.")
     exit()
 
-server_id = sys.argv[1]
-agent_id = sys.argv[2]
-group_id = sys.argv[3]
-auto_manager_id = server_id + '_' + agent_id + '_' + group_id 
+server_id = sys.argv[1]     # S1
+agent_id = sys.argv[2]      # A01
+group_id = sys.argv[3]      # the1
+auto_manager_id = server_id + '_' + agent_id + '_' + group_id   # S1_A01_the1
 
 
 # DB 접속
 conn = dbjob.connect_db()
+at_info = dbjob.select_autoManager_by_id(auto_manager_id)
+
+# Logger 설정
+CUR_CWD = os.getcwd()
+current_time = datetime.now()
+now = current_time.strftime("%Y%m%d_%H%M%S")
+log_filename = f"{CUR_CWD}\\pyHometax\\LOG\\{auto_manager_id}_T_{at_info['verify_stamp']}.log"
+logger = set_logger(log_filename)    # common.py 파일에 있음
+
 
 def init_step_job():
-    at_info = dbjob.select_autoManager_by_id(auto_manager_id)
     au_x            = at_info['au_x']
     status_cd       = at_info['status_cd']
     worker_id       = at_info['worker_id']

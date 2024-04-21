@@ -20,7 +20,7 @@ import math
 from common import *
 import ht_file
 import dbjob
-import sele_common as sc
+import pyHometax.common_sele as sc
 
 # # 메뉴이동 : '신고/납부' 클릭
 # def click_메뉴_신고납부(driver: WebDriver):

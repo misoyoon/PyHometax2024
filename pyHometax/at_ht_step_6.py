@@ -11,7 +11,7 @@ from pdfminer.layout import LTTextContainer
 import config
 from common import *
 import dbjob
-import sele_common as sc
+import pyHometax.common_sele as sc
 import ht_file
 
 # --------------------------------------------
@@ -84,7 +84,7 @@ pdf_check_info = {
 # -------------------------------------------------------------
 # (중요 공통) 아래의 모듈에서 step별 공통 기본 동작 실행
 # -------------------------------------------------------------
-import at_ht_step_common as step_common
+import pyHometax.common_at_ht_step as step_common
 group_id = step_common.group_id
 auto_manager_id = step_common.auto_manager_id
 conn = step_common.conn                 
@@ -181,7 +181,7 @@ def do_task(auto_manager_id, group_id):
             # --------------------------------------------------------------
             # 카카오 알림톡 발송
             # --------------------------------------------------------------
-            if notify_type_cd.find('EMAIL') >= 0:
+            if notify_type_cd.find('EMAIL') >= 0:  # 고객 이메일 발송만 카카오 알림톡 발송
                 (is_success, result) = send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_NOTAX_EMAIL)
                 if is_success:
                     dbjob.insert_smsHistory(result)

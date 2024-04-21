@@ -60,7 +60,7 @@ def move_iframe(driver: WebDriver, target_iframe:str='txppIframe', sleep=0.5):
 
     except Exception as e:
         loge("iframe 전환 예외")
-        #print(e)
+        #loge(f'{e}')
         return False
 
 
@@ -90,13 +90,13 @@ def change_window(driver: WebDriver, from_index: int, to_index: int):
 # Window 전환
 def print_window_by_title(driver: WebDriver, title=""):
     window_handles = driver.window_handles
-    print(window_handles)
+    logi(window_handles)
     
     idx = -1
-    print(f'윈도우 리스트')
+    logi(f'윈도우 리스트')
     for w_handle in window_handles:     
         idx += 1
-        print(f'{idx} : {w_handle.title}')
+        logi(f'{idx} : {w_handle.title}')
 
 # Alert처리
 def click_alert(driver: WebDriver, msg, sleep=0.5) -> str:
@@ -191,15 +191,15 @@ def close_other_windows(driver: WebDriver):
 def pyautoui_image_click(img_path, retry_cnt=10):
     for retry in range(retry_cnt):
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.8)
-        print(center)
-        print(img_path)
+        logi(center)
+        logi(img_path)
         if center == None :
             time.sleep(0.5)
-            print("이미지 클릭 재시도: retry=%d" % retry)
+            logi("이미지 클릭 재시도: retry=%d" % retry)
         else :
             time.sleep(0.3) # 0.3초후 클릭
             pyautogui.click(center)
-            print("이미지 클릭: %s" % img_path)
+            logi("이미지 클릭: %s" % img_path)
             return True
     return False
 
@@ -209,6 +209,6 @@ def check_availabe_driver(driver):
         title = driver.title
         return True
     except Exception as e:
-        print(e)
+        loge(f'{e}')
         return False
     

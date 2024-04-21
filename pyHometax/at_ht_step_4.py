@@ -16,17 +16,19 @@ import traceback
 import config
 from common import *
 import dbjob
-import sele_common as sc
+import pyHometax.common_sele as sc
 import ht_file
 
 
 # -------------------------------------------------------------
 # (중요 공통) 아래의 모듈에서 step별 공통 기본 동작 실행
 # -------------------------------------------------------------
-import at_ht_step_common as step_common
+import pyHometax.common_at_ht_step as step_common
 group_id = step_common.group_id
 auto_manager_id = step_common.auto_manager_id
-conn = step_common.conn                 
+conn = step_common.conn              
+AU_X = '4' 
+(driver, user_info, verify_stamp) = step_common.init_step_job()  
 # -------------------------------------------------------------
 
 
@@ -210,21 +212,20 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             
             
         except Exception as e:
-            print(e)
+            loge(f'{e}')
             traceback.print_exc()
 
         else :
-            print("===========정상종료 ")
+            logi("===========정상종료 ")
 
 
 
 if __name__ == '__main__':
-    (driver, user_info, verify_stamp) = step_common.init_step_job()
     if driver:
         driver.set_window_size(1300, 990) # 실제 적용시 : 990
         do_task(driver, user_info, verify_stamp) 
         
-    print("프로그램 종료")
+    logi(f"{AU_X}단계 작업 완료")
 
     if conn: 
         conn.close()

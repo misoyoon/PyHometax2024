@@ -2,3 +2,4 @@
 .pyhometax/**
 test/__pycache__/**
 pyHometax/__pycache__/**
+pyHometax/LOG/**

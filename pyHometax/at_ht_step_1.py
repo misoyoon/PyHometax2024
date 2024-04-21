@@ -11,20 +11,19 @@ import math
 
 from common import *
 import dbjob
-import sele_common as sc
+import common_sele as sc
 import ht_file
 
 
 # -------------------------------------------------------------
 # (중요 공통) 아래의 모듈에서 step별 공통 기본 동작 실행
 # -------------------------------------------------------------
-import at_ht_step_common as step_common
+import common_at_ht_step as step_common
 auto_manager_id = step_common.auto_manager_id
 conn = step_common.conn
-AU_X = 1
+AU_X = '1'
+(driver, user_info, verify_stamp) = step_common.init_step_job()
 # -------------------------------------------------------------
-
-
 
 def do_task(driver: WebDriver, user_info, verify_stamp):
 
@@ -53,7 +52,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 logi(f'Agent Check : Status={status_cd} ==> 작업 중지')
                 if status_cd == 'SW':
                     dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'SW 신호로 STOP 합니다.')
-                return
+                break
         else:
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
             
@@ -63,7 +62,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         
         if not ht_info:
             dbjob.update_autoManager_statusCd(auto_manager_id, 'F', '처리할 자료가 없어서 FINISH 합니다.')
-            return
+            break
             
         #담당자 전화번호 추가
         ht_info['worker_tel'] = user_info['tel']
@@ -131,7 +130,6 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         # -----------------------------------------------------------------------
         try:
             do_step1(driver, ht_info)
-
         
         except BizException as e:
             if e.name == "기존신청서삭제":
@@ -144,22 +142,19 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
 
                 do_step1(driver, ht_info)
             else:
-                dbjob.update_HtTt_AuX(1, ht_tt_seq, 'E', '')
+                dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', '')
 
         except Exception as e:
-            print(e)
-            dbjob.update_HtTt_AuX(1, ht_tt_seq, 'E', '')
+            loge(f'{e}')
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', '')
         
         else:  # 오류없이 정상 처리시
-            dbjob.update_HtTt_AuX(1, ht_tt_seq, 'S', '')
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', '')
         # -----------------------------------------------------------------------
 
 
 
-        # job 완료 처리 
-        dbjob.update_autoManager_statusCd(auto_manager_id, 'S')
-        logt("#######한건처리 완료 #######")
-            
+        logi("####### 한건처리 완료 #######")            
     # End of while        
     
 
@@ -513,8 +508,7 @@ def do_step1(driver: WebDriver, ht_info):
         sc.set_select_by_option_index(driver, 'cmbAcqTypeCd', 2, '(6)취득유형', 0)
 
 
-        
-
+        # FIXME 20231231, 20230101 점검
         sc.set_input_value_by_id(driver, 'edtAcqTypeClTrnStocCnt', str(trade['sell_qnt']) , '(7)양도주식 수', 0 )
         #sc.set_input_value_by_id(driver, 'edtTrnDt_input', str(trade['sell_date']).replace('-', ''), '(8)양도일자', 0)
         sc.set_input_value_by_id(driver, 'edtTrnDt_input', '20231231', '(8)양도일자', 0)
@@ -668,7 +662,7 @@ def do_step1(driver: WebDriver, ht_info):
     sc.click_alert(driver, "개인지방소득세는 별도 신고해야 합니다.", 1)
 
     logi(f"{ht_tt_seq} 번 DB성공처리")
-    dbjob.update_HtTt_AuX(1, ht_tt_seq, 'S', '')
+    dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', '')
 
     # 팝업iframe 닫기
     logt("클릭: [닫기] 팝업iframe", 1)
@@ -684,16 +678,16 @@ def do_step1(driver: WebDriver, ht_info):
     try :    
         logt("등록완료 후 팝업윈도우 닫기", 0.5)
         window_handles = driver.window_handles
-        print(window_handles)
+        logd(window_handles)
         if len(window_handles) > 1:
             for tmp_win_handle in window_handles:
-                print(tmp_win_handle)
+                logd(tmp_win_handle)
                 if tmp_win_handle != main_window_handle:
-                    print("다른 윈도우")
+                    logd("다른 윈도우")
                     driver.switch_to.window(tmp_win_handle)
                     driver.close()
                 else :
-                    print("메인 윈도우")
+                    logd("메인 윈도우")
 
             driver.switch_to.window(main_window_handle)
     except :
@@ -703,12 +697,10 @@ def do_step1(driver: WebDriver, ht_info):
 
 
 if __name__ == '__main__':
-
-    (driver, user_info, verify_stamp) = step_common.init_step_job()
     if driver:
         do_task(driver, user_info, verify_stamp) 
     
-    logi("프로그램 종료")
+    logi(f"{AU_X}단계 작업 완료")
 
     if conn:
         conn.close()

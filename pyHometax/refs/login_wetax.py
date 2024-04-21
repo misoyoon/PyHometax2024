@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.webdriver import WebDriver
 
-import sele_common as sc
+import pyHometax.common_sele as sc
 from config import *
 from common import *
 

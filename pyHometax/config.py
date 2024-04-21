@@ -8,7 +8,6 @@ LOG_LEVEL = 'DEBUG'
 # group_id = 'the1'
 FILE_ROOT_DIR_BASE = "E:\\FILESVR\\TaxAssist\\files\HtTt\\"
 
-
 DATABASE_CONFIG = {
     'db'       : 'taxwebdev','user'   : 'taxwebapp', 
     #'db'     : 'taxweb', 'user'   : 'taxwebapp', 

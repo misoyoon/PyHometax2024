@@ -20,7 +20,7 @@ import traceback
 from common import *
 import ht_file
 import dbjob
-import sele_common as sc
+import pyHometax.common_sele as sc
 
 # 자동신고단계 -----------------------------
 au_stpe = 3

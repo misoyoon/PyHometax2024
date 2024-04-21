@@ -12,7 +12,7 @@ import auto_step_1
 import dbjob
 
 import config
-import sele_common as sc
+import pyHometax.common_sele as sc
 
 
 # venv activate

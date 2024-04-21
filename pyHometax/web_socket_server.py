@@ -12,10 +12,15 @@ class ClientSession:
         self.inital_request_time = datetime.now()
 
 
+SOCKET_PORT = 18889
+UNCHANGED_LIMIT_MIN = 3  # 일정 시간 변동이 없을 경우 close 처리  (대략적인 시간으로 정확하지 않음)
+PING_TIME = 5  # client가 실제 연결되었는지 check
+
 # 클라이언트 세션을 관리하는 딕셔너리
 client_sessions = {}
 
-LOG_DIR = "E:/FILESVR/TaxAssist/Log"
+#LOG_DIR = "E:/FILESVR/TaxAssist/Log"
+LOG_DIR = "D:\\Project\\py\\PyHometax2024\\pyHometax\\LOG"
 
 # 서버의 파일을 클라이언트에게 전송하는 함수
 async def send_file_content(session):
@@ -65,25 +70,11 @@ async def send_file_content(session):
             session.last_read_position = file_size
         await websocket.send(f'File read error : {e}')
 
-
-# 일정시간 동안 변경이 없는 파일에 대한 세션 close 처리
-async def check_client_sessions():
-    LIMIT_MIN = 3
-    while True:
-        for client_id, client_session in client_sessions.copy().items():
-            if (datetime.now() - client_session.inital_request_time) > timedelta(minutes=LIMIT_MIN):
-                print(f'Closing session for client id={client_id}')
-
-                await client_session.websocket.send(f"No update file for {LIMIT_MIN} min.")
-                del client_sessions[client_id]
-        await asyncio.sleep(60)
-
-
 # 세션 마다 요청한 파일의 변경 부분을 전달
 async def send_content():
     try:
         while True:
-            print(f"Session Size = {len(client_sessions)}")
+            print(f"WebSocket Session Size = {len(client_sessions)}")
             for client_id, client_session in client_sessions.copy().items():
                 filename = client_session.filename
                 if not filename:
@@ -99,16 +90,17 @@ async def send_content():
 
 
 # 클라이언트가 요청으로 세션 생성 (주기적으로 ping으로 연결 여부 확인)
-async def set_session(websocket, path):
+async def make_session(websocket, path):
     query = urlparse(path).query
     query_components = parse_qs(query)
     filename = query_components.get('filename', [''])[0]
-    fullpath = f'{LOG_DIR}/{filename}'
+    fullpath = f'{LOG_DIR}\\{filename}.log'
 
-    if not filename or not fullpath:
+    if not filename or not os.path.exists(fullpath):
+        print(f'다음의 파일이 없어서 요청 Socket을 close 합니다. File={fullpath}')
         await websocket.send(f"[{filename}] is not provided !!")
         return
-    
+        
     client_id = id(websocket)
     if client_id not in client_sessions:
         print(f"Client connected, id={client_id}")
@@ -117,15 +109,29 @@ async def set_session(websocket, path):
     try:
         while True:
             await websocket.ping('ping')
-            await asyncio.sleep(5)
+            await asyncio.sleep(PING_TIME)
     except websockets.ConnectionClosed:
         del client_sessions[client_id]
         print(f'Client disconnected by ping test, client_id={client_id}  => session count={len(client_sessions)}')
 
 
+
+# 일정시간 동안 변경이 없는 파일에 대한 세션 close 처리
+async def check_client_sessions():
+
+    while True:
+        for client_id, client_session in client_sessions.copy().items():
+            if (datetime.now() - client_session.inital_request_time) > timedelta(minutes=UNCHANGED_LIMIT_MIN):
+                print(f'Closing session for client id={client_id}')
+
+                await client_session.websocket.send(f"No update file for {UNCHANGED_LIMIT_MIN} min.")
+                del client_sessions[client_id]
+        await asyncio.sleep(60)
+
+
 # 서버 실행
 async def main():
-    start_server = websockets.serve(set_session, "localhost", 18889)
+    start_server = websockets.serve(make_session, "localhost", SOCKET_PORT)
     await asyncio.gather(start_server, send_content(), check_client_sessions())
 
 

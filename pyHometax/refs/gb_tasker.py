@@ -1,11 +1,11 @@
 import time
-import gb_agent_env_SAMPLE as agent_env
+import pyHometax.gb_agent_env_개별 as agent_env
 import os, sys
 import gb_agent_db as autodb
 
 
 # 반복 실행 후 대기 시작
-
+# 현재 사용 안함 gb_agent.py에서 직접 단계별 py 실행 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 autodb.connect_db()

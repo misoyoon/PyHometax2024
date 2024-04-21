@@ -16,17 +16,19 @@ import traceback
 import config
 from common import *
 import dbjob
-import sele_common as sc
+import common_sele as sc
 import ht_file
 
 
 # -------------------------------------------------------------
 # (중요 공통) 아래의 모듈에서 step별 공통 기본 동작 실행
 # -------------------------------------------------------------
-import at_ht_step_common as step_common
+import common_at_ht_step as step_common
 group_id = step_common.group_id
 auto_manager_id = step_common.auto_manager_id
-conn = step_common.conn                 
+conn = step_common.conn
+AU_X = '3'
+(driver, user_info, verify_stamp) = step_common.init_step_job()
 # -------------------------------------------------------------
 
 
@@ -176,7 +178,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             검색결과건수 = driver.find_element(By.CSS_SELECTOR, '#spnTotCnt').text
             if int(검색결과건수) == 0:
                 # 위임자목록에 없음
-                dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', "위임자목록 조회결과 없음")
+                dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', "위임자목록 조회결과 없음")
                 dbjob.insert_auHistory(ht_tt_seq, worker_id, au_x, '위임자목록 조회', ' 검색결과건수 : 0', auto_manager_id)
                 driver.switch_to.default_content()
                 driver.find_element(By.CSS_SELECTOR, "#cmnPopup_dlgp > div > button").click()
@@ -200,7 +202,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             if ht_info['holder_nm'] != 양도인명:
                 dbjob.insert_auHistory(ht_tt_seq, worker_id, au_x, '양도인명 불일치', f"DB={ht_info['holder_nm']}, 위택스={양도인명}", auto_manager_id)
                 # 에러처리하지 않고 성공처리하기, 다만 au_history에 이력 남기기
-                # dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f"양도인명불일치 : DB={ht_info['holder_nm']}, 위택스={양도인명}")
+                # dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"양도인명불일치 : DB={ht_info['holder_nm']}, 위택스={양도인명}")
             
             
             # [다음] 버튼 클릭
@@ -241,7 +243,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             is_found = False
             검색결과건수 = driver.find_element(By.CSS_SELECTOR, '#homeTotCnt').text
             if int(검색결과건수) == 0:
-                dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', "홈택스신고 조회결과 없음")
+                dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', "홈택스신고 조회결과 없음")
             else:
                 trs = driver.find_elements(By.CSS_SELECTOR, "#tbl_homeTaxList > tbody > tr")
                 for idx, tr in enumerate(trs, 0):
@@ -255,11 +257,11 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 
             if not is_found:
                 # 위임자목록에 없음
-                dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f"홈택스신고 조회결과 : {검색결과건수}")
+                dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"홈택스신고 조회결과 : {검색결과건수}")
                 dbjob.insert_auHistory(ht_tt_seq, worker_id, au_x, '홈택스신고 조회', f"검색결과건수 : {검색결과건수}, 홈택스접수번호={ht_info['hometax_reg_num']}", auto_manager_id)
                 # 닫기버튼
                 driver.find_element(By.CSS_SELECTOR, "#btnHomeClose").click()
-                logi(f"홈택스신고 조회결과 없음  ==>  다음 양도인 처리 진행")
+                logi(f"홈택스신고 조회결과 없음  ====================================>  다음 양도인 처리 진행")
                 continue
             else:
                 # 팝업닫기 : 홈택스에서 신고된 내용을 자동채움하였습니다. 계속 진행하세요.                 
@@ -366,15 +368,15 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             #     print(e)
             #     traceback.print_exc()
             # else:
-            #         dbjob.update_HtTt_AuX('4', ht_tt_seq, 'S')
+            #         dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S')
             
         except Exception as e:
-            print(e)
+            loge(f'{e}')
             traceback.print_exc()
-            dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', e)
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', e)
         else : # 오류가 없을 경우만 실행
-            dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'S')
-            print(">>>>>>>>>> 1건 정상처리")
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S')
+            logi(">>>>>>>>>> 1건 정상처리")
 
     # End of while
 
@@ -481,19 +483,18 @@ def check_report_step(driver, ht_tt_seq, worker_id, au_x, auto_manager_id, step)
     clazz = driver.find_element(By.CSS_SELECTOR, f'#olStepList > li:nth-child({step})').get_attribute('class')
     if clazz != 'on':
         dbjob.insert_auHistory(ht_tt_seq, worker_id, au_x, '진행단계 불일치', f'{step}단계 불일치', auto_manager_id)
-        dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f"진행단계 불일치 : {step}단계")
+        dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"진행단계 불일치 : {step}단계")
         return False
     else:
         return True    
 
 
 if __name__ == '__main__':
-    (driver, user_info, verify_stamp) = step_common.init_step_job()
     if driver:
         driver.set_window_size(1300, 990) # 실제 적용시 : 990
         do_task(driver, user_info, verify_stamp) 
         
-    print("프로그램 종료")
+    logi(f"{AU_X}단계 작업 완료")
 
     if conn: 
         conn.close()

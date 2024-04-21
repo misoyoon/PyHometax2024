@@ -1,11 +1,9 @@
 import time
 import os, sys
-import datetime
 
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium import webdriver
 
-import dbjob
 import config
 #from queue import Queue
 #import threading
@@ -28,34 +26,56 @@ import config
 # au_history_queue = Queue()
 # au_history_thread = threading.Thread(target=receiver, args=(au_history_queue,))
 # au_history_thread.start()
+# 로깅 설정
 
+import logging
+logger = None
+def set_logger(log_filename, level=logging.INFO):
+    global logger
+    
+    # 로깅 설정
+    logging.basicConfig(level=level,  format='%(asctime)s - %(levelname)s - %(message)s')
 
-def log_base(level, msg):
-    now = time.localtime()
-    pattern = "%04d-%02d-%02d %02d:%02d:%02d" % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
-    print("%s %5s %15s : %s" % (pattern, level, sys._getframe(2).f_code.co_name, msg))
+    # 파일 핸들러 생성
+    file_handler = logging.FileHandler(log_filename, encoding='utf-8')
+    file_handler.setLevel(level)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+    # 로거에 핸들러 추가
+    logger = logging.getLogger()
+    logger.addHandler(file_handler)
+    
+    # 콘솔 핸들러 생성
+    #console_handler = logging.StreamHandler()
+    #console_handler.setLevel(level)
+    #console_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+    #logger.addHandler(console_handler)
+    
+    return logger
+
+# def log_base(level, msg):
+#     now = time.localtime()
+#     pattern = "%04d-%02d-%02d %02d:%02d:%02d" % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
+#     print("%s %5s %15s : %s" % (pattern, level, sys._getframe(2).f_code.co_name, msg))
 
 # DEBUG
 def logd(msg):
     cur_level = config.LOG_LEVEL
-
-    if cur_level == "DEBUG":
-        log_base("DEBUG", msg)
+    logger.debug(msg)
 
 # INFO        
 def logi(msg):
     cur_level = config.LOG_LEVEL
-    if cur_level == "INFO" or cur_level == "DEBUG":
-        log_base("INFO", msg)
+    logger.info(msg)
 
 # WARN
 def logw(msg):
-    log_base("WARN", msg)
+    logger.warning(msg)
 
 
 # ERROR
 def loge(msg):
-    log_base("ERROR", msg)
+    logger.error(msg)
 
 
 
@@ -63,9 +83,9 @@ def logt(title, t=0):
     # dbjob.insert_auHistory(title, "");
 
     if t==0 :
-        log_base("INFO", title)
+        logger.info(title)
     else :
-        log_base("INFO", "[" +str(t) + "초 후] " + title)
+        logger.info(f"[{str(t)}초 후] {title}")
         time.sleep(t)
 
 
@@ -75,26 +95,26 @@ def logqry(sql, data=()):
     if config.DB_QUERY_PRINT :
         try :
             lpad_str = "        "
-            print(lpad_str + rpad("=== " + sys._getframe(1).f_code.co_name + "() ", 50, "="))
-            print(lpad_str + sql % data)
-            print(lpad_str + rpad("", 50, "="))
+            logger.info(lpad_str + rpad("=== " + sys._getframe(1).f_code.co_name + "() ", 50, "="))
+            logger.info(lpad_str + sql % data)
+            logger.info(lpad_str + rpad("", 50, "="))
         except:
-            print("except: logqry(), sql=" + sql)
+            logger.info("except: logqry(), sql=" + sql)
 
 
 def logqry_many(sql, many_data):
     if (config.DB_QUERY_PRINT):
         lpad_str = "        "
-        print(lpad_str + rpad("=== (Many) " + sys._getframe(1).f_code.co_name + "()", 50, "="))
+        logger.info(lpad_str + rpad("=== (Many) " + sys._getframe(1).f_code.co_name + "()", 50, "="))
         
         for data in many_data:
-            print(lpad_str + sql % (data))
+            logger.info(lpad_str + sql % (data))
         
-        print(rpad("", 50, "="))
+        logger.info(rpad("", 50, "="))
 
 def logrs(rs:list):
     if (config.DB_QUERY_PRINT):
-        print("RecordSet : count=%d" % len(rs))
+        logger.info("RecordSet : count=%d" % len(rs))
 
 
 def resource_path(relative_path):

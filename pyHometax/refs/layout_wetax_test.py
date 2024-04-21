@@ -2,7 +2,7 @@ import pymysql
 import common
 import layout_wetax_trans as wetax_layout
 
-import gb_agent_env_SAMPLE as agent_env
+import pyHometax.gb_agent_env_개별 as agent_env
 import gb_agent_db as autodb
 
 def main_test():

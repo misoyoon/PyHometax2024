@@ -22,7 +22,7 @@ import traceback
 from common import *
 import ht_file
 import dbjob
-import sele_common as sc
+import pyHometax.common_sele as sc
 import auto_step_1
 import config
 

@@ -14,7 +14,7 @@ from common import *
 import dbjob
 
 import pyHometax.auto_login as auto_login 
-import sele_common as sc
+import pyHometax.common_sele as sc
 
 
 company_info = {
