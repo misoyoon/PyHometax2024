@@ -6,9 +6,12 @@ import signal
 from threading import Thread
 from datetime import datetime
 
+sys.path.insert(0, "C:/gby/pyHometax")  # gb_agent_env_개별(탬플릿).py를 해당 위치로 이동하기
+
 import gb_agent_env_개별 as agent_env
 import dbjob
 import common
+
 # # 로깅 설정
 # import logging
 # # 로깅 설정
@@ -41,6 +44,9 @@ now = current_time.strftime("%Y%m%d_%H%M%S")
 log_filename = f"{CUR_CWD}\\pyHometax\\LOG\\{auto_manager_id}_A_{now}.log"
 logger = common.set_logger(log_filename)    
 
+logger.info("##############################")
+logger.info(f"설정 정보 : {agent_env.AUTO_MANAGER_ID}")
+logger.info("##############################")
 
 def main():
     '''

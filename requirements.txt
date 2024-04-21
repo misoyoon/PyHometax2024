@@ -3,9 +3,12 @@ attrs==21.4.0
 certifi==2021.10.8
 cffi==1.15.0
 chardet==4.0.0
+charset-normalizer==3.3.2
 chromedriver-autoinstaller==0.6.4
 cryptography==36.0.2
 et-xmlfile==1.1.0
+gevent==24.2.1
+greenlet==3.0.3
 h11==0.13.0
 idna==3.3
 linkhub==1.6.0
@@ -33,6 +36,7 @@ PyScreeze==0.1.28
 PySocks==1.7.1
 pytweening==1.0.4
 pywin32==306
+requests==2.31.0
 selenium==4.17.2
 sniffio==1.2.0
 sortedcontainers==2.4.0
@@ -40,4 +44,8 @@ trio==0.20.0
 trio-websocket==0.9.2
 typing_extensions==4.9.0
 urllib3==1.26.9
+watchdog==4.0.0
+websockets==12.0
 wsproto==1.1.0
+zope.event==5.0
+zope.interface==6.2
