@@ -25,6 +25,11 @@ AU_X = '1'
 (driver, user_info, verify_stamp) = step_common.init_step_job()
 # -------------------------------------------------------------
 
+driver.close()
+# while True:
+#     logt("연습용 테스트 입니다.  향후 삭제해야합니다.", 1)
+#     continue
+
 def do_task(driver: WebDriver, user_info, verify_stamp):
 
     job_cnt = 0
@@ -116,8 +121,11 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 sc.move_iframe(driver)
                 go_확정신고(driver)                    
             except:
-                loge("신고/납부 메뉴 이동 오류로 다음 신청자로 continue함")
-                continue
+                loge("신고/납부 메뉴 이동 오류")
+                dbjob.update_autoManager_statusCd(auto_manager_id, 'E', '신고/납부 메뉴 이동 오류')
+                break
+                #loge("신고/납부 메뉴 이동 오류로 다음 신청자로 continue함")
+                #continue
 
         # FIXME 테스트 용도
         #logt("[클릭] 기한후신고", 0.5)
@@ -129,6 +137,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         # Step 1. 세금신고 : 기본정보(양도인)
         # -----------------------------------------------------------------------
         try:
+            # 메인 작업
             do_step1(driver, ht_info)
         
         except BizException as e:
@@ -143,10 +152,14 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 do_step1(driver, ht_info)
             else:
                 dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', '')
+                dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'{e}')
+                break # 한건이라도 오류가 발생하면 해당 자동화작업 정지
 
         except Exception as e:
             loge(f'{e}')
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', '')
+            dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'{e}')
+            break # 한건이라도 오류가 발생하면 해당 자동화작업 정지
         
         else:  # 오류없이 정상 처리시
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', '')

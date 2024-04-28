@@ -6,7 +6,7 @@ import signal
 from threading import Thread
 from datetime import datetime
 
-import dbjob
+import config
 import common
 # # 로깅 설정
 # import logging
@@ -34,11 +34,16 @@ LOOP_WAIT_AGENT  = 10
 pid  = os.getpid()
 CUR_CWD = os.getcwd()
 
-LOG_DIR = f"{CUR_CWD}\\pyHometax\\LOG"
+
 
 current_time = datetime.now()
 now = current_time.strftime("%Y%m%d_%H%M%S")
-log_filename = f"{LOG_DIR}\\WS_LOG_WATCHER_{now}.log"
+
+# 로그 폴더 생성
+log_type = "websocket"
+os.makedirs(f"{config.WATCHER_LOG_DIR}/{log_type}", exist_ok=True)
+
+log_filename = f"{config.WATCHER_LOG_DIR}/{log_type}/ws_{now}.log"
 logger = common.set_logger(log_filename)    
 
 
@@ -50,7 +55,7 @@ def main():
     CURRENT_THREAD = None
     while True:
         # --------------------------------------------------------
-        # 진행단계에 맞는 하위 작업 선택하기
+        # 웹소켓 서버 파일 실행
         # --------------------------------------------------------
         run_py_file = 'web_socket_server.py'
         run_py_fullpath = f'{CUR_CWD}\\pyHometax\\{run_py_file}'

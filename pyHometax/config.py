@@ -1,22 +1,42 @@
+SERVER_TYPE = "DEV"  #개발환경: DEV, 운영환경: PROD
+
 IS_DEBUG = False  # 쿠키로그인
-
 DB_QUERY_PRINT = False
-
 LOG_LEVEL = 'DEBUG'
 
 # 주석처리
 # group_id = 'the1'
-FILE_ROOT_DIR_BASE = "E:\\FILESVR\\TaxAssist\\files\HtTt\\"
+FILE_ROOT_DIR_BASE = "U:\\TaxAssist\\files\HtTt\\"
 
-DATABASE_CONFIG = {
-    'db'       : 'taxwebdev','user'   : 'taxwebapp', 
-    #'db'     : 'taxweb', 'user'   : 'taxwebapp', 
-    'password' : '!taxweb#', 
-    #'host'     : '61.38.105.227', 
-    'host'     : 'localhost', 
-    'port'     : 3406,
-    'charset'  : 'utf8'
-}
+# 자동신고(단계별) 로그 생성
+AUTO_STEP_LOG_DIR   = "V:/PyHometax_Log_2024/AutoStep"
+# 감시watcher로그 (2군데서 사용: 자동신고 watcher, WebSocket watcher)
+WATCHER_LOG_DIR     = "V:/PyHometax_Log_2024/Watcher"
+
+# 자동신고 진행사항 LOG 웹소켓
+WEBSOCKET_SERVER_IP   = '61.38.105.227'
+WEBSOCKET_SERVER_PORT = 18889
+
+# DB 설정
+DATABASE_CONFIG = {}
+if SERVER_TYPE == 'PROD':
+    DATABASE_CONFIG = {
+        'db'       : 'taxweb', 
+        'user'     : 'taxwebapp', 
+        'password' : '!taxweb#', 
+        'host'     : '61.38.105.227', 
+        'port'     : 3406,
+        'charset'  : 'utf8'
+    }    
+else:
+    DATABASE_CONFIG = {
+        'db'       : 'taxwebdev',
+        'user'     : 'taxwebapp', 
+        'password' : '!taxweb#', 
+        'host'     : 'localhost', 
+        'port'     : 3406,
+        'charset'  : 'utf8'
+    }
 
 HT_SERIES_YYYYMM = '202405'
 
@@ -38,31 +58,4 @@ LOGIN_INFO = {
     ,'rep_pw' : 'kksjns1203!'    
 }
 
-#BROWSER_SIZE = { 'width' : 1300, 'height': 1500}
 BROWSER_SIZE = { 'width' : 1100, 'height': 1150}
-
-# 주석처리
-#HOST_NAME = 'AUTOSVR'
-
-
-# USER_LIST = {
-#     # 담당자명 : 로그인ID,  홈택스ID 아님!
-#     "관리자"  : "MANAGER_ID"
-
-# ,     "강솔이" :	"the1tax_1"	
-# ,     "강솔이2":	"the1tax_1a"
-# ,     "김미송" :	"the1tax_2"
-# ,     "김미송2":	"the1tax_2a"
-# ,     "장지헌" : 	"the1tax_3"
-# ,     "이의정" :	"the1tax_4"	
-# ,     "이현진" :	"the1tax_5"	
-# ,     "최재원" :	"the1tax_6"	
-# ,     "최우영" :	"the1tax_7"	
-# ,     "김민재" :	"the1tax_8"
-# ,     "이문현" :	"the1tax_9"
-# ,     "김재욱" :	"the1tax_10"
-# ,     "김재욱2":	"the1tax_10a"
-# ,     "백종환" :	"the1tax_11"
-# ,     "이태림" :	"the1tax_12"
-# }
-

@@ -9,6 +9,7 @@ from datetime import datetime
 sys.path.insert(0, "C:/gby/pyHometax")  # gb_agent_env_개별(탬플릿).py를 해당 위치로 이동하기
 
 import gb_agent_env_개별 as agent_env
+import config
 import dbjob
 import common
 
@@ -33,20 +34,36 @@ import common
 # #logger.addHandler(console_handler)
 
 # 반복 실행 후 대기 시작
-LOOP_WAIT_AGENT  = 10
-
-pid  = os.getpid()
+LOOP_WAIT_AGENT  = 10  # (초)
 CUR_CWD = os.getcwd()
-auto_manager_id = agent_env.AUTO_MANAGER_ID
 
+auto_manager_id = agent_env.AUTO_MANAGER_ID
+SERVER_ID = agent_env.SERVER_ID
+AGENT_ID  = agent_env.AGENT_ID
+GROUP_ID  = agent_env.GROUP_ID
+
+# CMD에서 강제로 지정할 경우 (gb_agent_env_개별  <-- 대체됨)
+if len(sys.argv) > 1:
+    auto_manager_id = sys.argv[1]
+    cmdEnv = auto_manager_id.split("_")
+    SERVER_ID = cmdEnv[0]
+    AGENT_ID  = cmdEnv[1]
+    GROUP_ID  = cmdEnv[2]
+    
+pid  = os.getpid()
 current_time = datetime.now()
 now = current_time.strftime("%Y%m%d_%H%M%S")
-log_filename = f"{CUR_CWD}\\pyHometax\\LOG\\{auto_manager_id}_A_{now}.log"
+
+# 로그 폴더 생성
+log_type = "agent"
+os.makedirs(f"{config.WATCHER_LOG_DIR}/{log_type}", exist_ok=True)
+
+log_filename = f"{config.WATCHER_LOG_DIR}/{log_type}/{auto_manager_id}_{now}.log"
 logger = common.set_logger(log_filename)    
 
-logger.info("##############################")
-logger.info(f"설정 정보 : {agent_env.AUTO_MANAGER_ID}")
-logger.info("##############################")
+logger.info("#########################################################")
+logger.info(f"설정 정보 : {auto_manager_id} ==>  SERVER_ID={SERVER_ID}, AGENT_ID={AGENT_ID}, GROUP_ID={GROUP_ID}") 
+logger.info("#########################################################")
 
 def main():
     '''
@@ -75,10 +92,10 @@ def main():
         # 진행단계에 맞는 하위 작업 선택하기
         # --------------------------------------------------------
         run_py_file = f'at_ht_step_{au_x}.py'
-        run_py_fullpath = f'{CUR_CWD}\\pyHometax\\{run_py_file}'
+        run_py_fullpath = f'{CUR_CWD}/pyHometax/{run_py_file}'
         
-        found_proc_count = find_process_count(run_py_file, agent_env.SERVER_ID, agent_env.AGENT_ID, agent_env.GROUP_ID)
-        logger.info(f'[GBAgent LOOPING] ID={auto_manager_id}, PID={pid}, 진행상태=[{status_cd}], 자동화단계=[{au_x}], 프로세스 개수=[{found_proc_count}]')
+        found_proc_count = find_process_count(run_py_file, SERVER_ID, AGENT_ID, GROUP_ID)
+        logger.info(f'[AutoStep Agent LOOPING] ID={auto_manager_id}, PID={pid}, 진행상태=[{status_cd}], 자동화단계=[{au_x}], 프로세스 개수=[{found_proc_count}]')
 
         #if found_proc_count>0 and status_cd == 'RW':
         #    kill_process(run_py_file, agent_env.SERVER_ID, agent_env.AGENT_ID, agent_env.GROUP_ID)
@@ -100,7 +117,7 @@ def main():
             if au_x != None:
                 if found_proc_count == 0:
                     logger.info('   ==> START Thread !!!')
-                    CURRENT_THROED = Thread(target=start_thread, args=(run_py_fullpath, agent_env.SERVER_ID, agent_env.AGENT_ID, agent_env.GROUP_ID))
+                    CURRENT_THROED = Thread(target=start_thread, args=(run_py_fullpath, SERVER_ID, AGENT_ID, GROUP_ID))
                     CURRENT_THROED.start()
                 else:
                     logger.info('   ==> 실행 중 ...')

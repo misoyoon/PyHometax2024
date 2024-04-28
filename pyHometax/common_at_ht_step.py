@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 import sys
 from datetime import datetime
 
+import config 
 from common import *
 import dbjob
 import auto_login 
@@ -27,7 +28,11 @@ at_info = dbjob.select_autoManager_by_id(auto_manager_id)
 CUR_CWD = os.getcwd()
 current_time = datetime.now()
 now = current_time.strftime("%Y%m%d_%H%M%S")
-log_filename = f"{CUR_CWD}\\pyHometax\\LOG\\{auto_manager_id}_T_{at_info['verify_stamp']}.log"
+
+# 로그 폴더 생성
+os.makedirs(f"{config.AUTO_STEP_LOG_DIR}/{auto_manager_id}", exist_ok=True)
+
+log_filename = f"{config.AUTO_STEP_LOG_DIR}/{auto_manager_id}/{auto_manager_id}_{at_info['verify_stamp']}.log"
 logger = set_logger(log_filename)    # common.py 파일에 있음
 
 

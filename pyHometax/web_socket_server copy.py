@@ -12,8 +12,9 @@ class ClientSession:
         self.websocket = websocket
         self.fullpath = fullpath
         self.auto_manager_id = auto_manager_id
+        
         self.last_read_position = 0
-        self.initial_request_time = datetime.now()
+        self.inital_request_time = datetime.now()
 
 
 UNCHANGED_LIMIT_MIN = 1  #(분) 일정 시간 변동이 없을 경우 close 처리  (대략적인 시간으로 정확하지 않음)
@@ -30,11 +31,12 @@ client_sessions = {}
 async def send_file_content(session):
     start_time = time.time()
 
-    client_id = session.client_id
     fullpath = session.fullpath
     start_byte = session.last_read_position
     websocket = session.websocket
 
+    #if session.last_read_position == os.path.getsize(session.fullpath):
+    #    ...
     if not fullpath or not os.path.exists(fullpath):
         print(f"File Not Fount = {fullpath}")
         return
@@ -65,27 +67,12 @@ async def send_file_content(session):
                         pos -= 1
 
             f.seek(start_byte)            
-            content = f.read()
+            content  = f.read()
 
             if content:
                 await websocket.send(content)
                 session.last_read_position = f.tell()
                 session.inital_request_time = datetime.now()
-            else:
-                # 현재 시간과 초기 요청 시간 사이의 차이를 계산
-                time_difference = datetime.now() - session.initial_request_time
-                # 1분 이상 차이가 나는 경우 세션을 삭제
-                if time_difference.total_seconds() >= 60:
-                    await websocket.send("\n>>>>> __NO_UPDATE_1MIN__ 60초간 파일에 변경 내용이 없어 해당 세션을 종료합니다!")
-                    await websocket.close()
-                    print(f"    Removing session! (No changed for 60sec.), client_id={client_id}, size={len(client_sessions)}")
-                    if client_id in client_sessions:
-                        del client_sessions[client_id]
-                
-    except websockets.ConnectionClosed:
-        if client_id in client_sessions:
-            del client_sessions[client_id]
-        print(f"    Disconnected (send_file_content()), client_id={client_id}, size={len(client_sessions)}")
     except Exception as e:
         if file_size > 0:
             session.last_read_position = file_size
@@ -95,7 +82,7 @@ async def send_file_content(session):
 async def send_content():
     try:
         while True:
-            print(f"    While ==> send_content() Session Size = {len(client_sessions)}")
+            print(f"While ==> send_content() Session Size = {len(client_sessions)}")
             for client_id, client_session in client_sessions.copy().items():
                 #print(f"    send_content  client_id = {client_id}")
                 filename = client_session.fullpath
@@ -104,13 +91,11 @@ async def send_content():
 
                 await send_file_content(client_session)
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
     except websockets.ConnectionClosed:
-        # 클라이언트 세션이 이미 삭제된 경우에는 다시 삭제하지 않도록 확인
-        if client_id in client_sessions:
-            del client_sessions[client_id]
-        print(f"    Disconnected (send_content()), client_id={client_id}, size={len(client_sessions)}")
+        del client_sessions[client_id]
+        print("Client disconnected")
 
 
 # 클라이언트가 요청으로 세션 생성 (주기적으로 ping으로 연결 여부 확인)
@@ -121,69 +106,67 @@ async def make_session(websocket, path):
     auto_manager_id = query_components.get('auto_manager_id', [''])[0]
     filename        = query_components.get('filename', [''])[0]
     
-    # 보안을 위한 파일명 변경   
-    filename = filename.replace("/", "").replace("\\", "").replace(".", "").replace(":", "")
     fullpath = f'{config.AUTO_STEP_LOG_DIR}/{auto_manager_id}/{filename}.log'
 
-
     if not filename or not os.path.exists(fullpath):
-        print(f'>>>>> __FILE_NOT_FOUNT__ - 파일이 없어 Socket을 close 합니다. File={filename}\n')
-        await websocket.send(f">>>>> __FILE_NOT_FOUNT__ - 파일이 없어 Socket을 close 합니다. File={filename}\n")
-        return
-        
+        #print(f'다음의 파일이 없어서 요청 Socket을 close 합니다. File={fullpath}')
+        #await websocket.send(f"[{filename}] is not provided !!")
+        #return
         max_try = 10
         for i in range(1, max_try+1):
             if not os.path.exists(fullpath): 
-                await websocket.send(f'try={i}, Not exists file so waiting ...\n')
+                await websocket.send(f'try={i}, Not exists file so waiting ...')
                 print(f'try={i}, Not exists file so waiting ... Filename={fullpath}')
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
             else:
                 break
             
             if max_try == i:
-                await websocket.send(f'>>>>> 해당 파일이 생성되지 않아 서비스를 종료합니다!')
+                await websocket.send(f'해당 파일이 생성되지 않아 서비스를 종료합니다!')
                 await websocket.close()
                 return
-
+        
     client_id = id(websocket)
-    # 클라이언트 세션 관리 및 재사용
-    if client_id in client_sessions:
-        # 이미 해당 클라이언트의 세션이 존재하는 경우, 기존 세션을 재사용
-        session = client_sessions[client_id]
-        session.websocket = websocket
-        session.fullpath = fullpath
-        session.auto_manager_id = auto_manager_id
-    else:
-        # 해당 클라이언트의 세션이 없는 경우, 새로운 세션 생성
+    if client_id not in client_sessions:
+        print(f"New Client connected, id={client_id}")
         client_sessions[client_id] = ClientSession(client_id, websocket, fullpath, auto_manager_id)
-        print(f"New connected, id={client_id}, size={len(client_sessions)}")
 
-    try:
-        while True:
-            # 클라이언트의 연결 상태를 주기적으로 확인하여 세션 유지
+    while True:
+        try:
+            print(f"    FOR => ping :: session count={len(client_sessions)}, client_id={client_id}")
             await websocket.ping('ping')
             await asyncio.sleep(PING_TIME_SEC)
-    except websockets.ConnectionClosed:
-        # 클라이언트 세션이 이미 삭제된 경우에는 다시 삭제하지 않도록 확인
-        if client_id in client_sessions:
-            del client_sessions[client_id]
-        print(f"    Disconnected (make_session()), client_id={client_id}, size={len(client_sessions)}")
+        except websockets.ConnectionClosed:
+            print(f'        except (ping) :: Force disconnected by ping,   DELETEED client_id={client_id},  나머지 session count={len(client_sessions)}')
+            #del client_sessions[client_id]
+            #for client_id, client_session in client_sessions.copy().items():
+            #    print(f"    send_content1 client_id = {client_id}")
+            break
+        except Exception as e:
+            print(f'error pos 2 : {e}')
+            for client_id, client_session in client_sessions.copy().items():
+                print(f"    send_content2  client_id = {client_id}")
+            #del client_sessions[client_id]
+            break
 
 
-# 세션 유지를 위한 변경
+
+# 일정시간 동안 변경이 없는 파일에 대한 세션 close 처리
 async def check_client_sessions():
-    while True:
-        print("Checking client session ... Interval = 60 sec")
-        for client_id, client_session in client_sessions.copy().items():
-            try:
-                # 클라이언트의 연결 상태를 주기적으로 확인하여 세션 유지 또는 종료
-                await client_session.websocket.ping('ping')
-            except websockets.ConnectionClosed:
-                # 클라이언트 세션이 이미 삭제된 경우에는 다시 삭제하지 않도록 확인
-                if client_id in client_sessions:
-                    del client_sessions[client_id]                
-                print(f"    Disconnected (check_client_sessions()), client_id={client_id}, size={len(client_sessions)}")
 
+    while True:
+        for client_id, client_session in client_sessions.copy().items():
+            print(f"FOR : check_client_sessions() :: client_id={client_id}")
+            if (datetime.now() - client_session.inital_request_time) > timedelta(minutes=UNCHANGED_LIMIT_MIN):
+                print(f'Closing session for client id={client_id}')
+
+                try:
+                    await client_session.websocket.send(f"No update file for {UNCHANGED_LIMIT_MIN} min.")
+                    del client_sessions[client_id]
+                except Exception as e:
+                    print(f"check_client_sessions : {client_sessions}")
+                    print(f'error pos 1 : {e}')
+                    
         await asyncio.sleep(60)
 
 
@@ -194,15 +177,11 @@ async def main():
         ssl_context.load_cert_chain(certfile='C:/cert/fullchain.pem', keyfile='C:/cert/taxassist.kr.key')
 
         start_server = websockets.serve(make_session, config.WEBSOCKET_SERVER_IP, config.WEBSOCKET_SERVER_PORT, ssl=ssl_context)    
+        await asyncio.gather(start_server, send_content(), check_client_sessions())
     else:
         start_server = websockets.serve(make_session, "localhost", config.WEBSOCKET_SERVER_PORT)
-
-    # 서버 시작
-    await start_server
-
-    # 서버가 시작된 후에 실행되어야 할 작업들
-    await asyncio.ensure_future(send_content())
-    await asyncio.ensure_future(check_client_sessions())
+        await asyncio.gather(start_server, send_content()) #, check_client_sessions())
+        
 
 if __name__ == "__main__":
     print("============================================================")
