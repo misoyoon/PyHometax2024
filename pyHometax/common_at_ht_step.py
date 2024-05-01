@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 import sys
 from datetime import datetime
 
@@ -105,6 +106,15 @@ def init_step_job():
         # ----------------------------------------------------------------------------        
         auto_login.login_wetax(driver)
         logt("위택스 로그인 완료 : %s (%s)" % (worker_id, worker_nm), 1)        
+
+        # input 태그 찾기
+        try:
+            checkbox = driver.find_element_by_id("chk_today_close1")
+            # input 태그가 존재할 때만 클릭
+            checkbox.click()
+        except NoSuchElementException:
+            # input 태그가 존재하지 않을 경우 pass
+            pass
 
 
     logt(f"해외주식 양도소득세 자동신고 기동 : {au_x}단계")
