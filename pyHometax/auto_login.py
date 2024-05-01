@@ -129,7 +129,6 @@ def login_3step(driver, login_info):
     logt ("업무 담당자 로그인 시작 = " + login_info['name'])
 
     # 1) 홈택스 접속
-
     logt("홈택스 메인 화면 이동 및 오픈 대기(10초)")
     sc.go_main_page(driver)
 
@@ -205,7 +204,7 @@ def login_3step(driver, login_info):
 
 def login_hometax_use_cookie(driver, txpp, teht):
     # 2. 홈택스 접속
-    url = 'https://www.hometax.go.kr/'
+    url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml'
     #url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index.xml&tmIdx=9&tm2lIdx=&tm3lIdx='
     driver.get(url)
 

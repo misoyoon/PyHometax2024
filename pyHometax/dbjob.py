@@ -583,17 +583,17 @@ def update_HtTt_AuX(au_x, ht_tt_seq, au_status, au_message="") :
     param = (au_status, au_message, ht_tt_seq)
     sql = ""
     if au_x == '1':
-        sql = 'UPDATE ht_tt SET au1=%s, au1_msg=%s WHERE ht_tt_seq=%s'
+        sql = 'UPDATE ht_tt SET au1=%s, au1_msg=%s, au1_reg_dt=NOW() WHERE ht_tt_seq=%s'
     elif au_x == '2':
-        sql = 'UPDATE ht_tt SET au2=%s, au2_msg=%s WHERE ht_tt_seq=%s'
+        sql = 'UPDATE ht_tt SET au2=%s, au2_msg=%s, au2_reg_dt=NOW() WHERE ht_tt_seq=%s'
     elif au_x == '3':
-        sql = 'UPDATE ht_tt SET au3=%s, au3_msg=%s WHERE ht_tt_seq=%s'
+        sql = 'UPDATE ht_tt SET au3=%s, au3_msg=%s, au3_reg_dt=NOW() WHERE ht_tt_seq=%s'
     elif au_x == '4':
-        sql = 'UPDATE ht_tt SET au4=%s, au4_msg=%s WHERE ht_tt_seq=%s'
+        sql = 'UPDATE ht_tt SET au4=%s, au4_msg=%s, au4_reg_dt=NOW() WHERE ht_tt_seq=%s'
     elif au_x == '5':
-        sql = 'UPDATE ht_tt SET au5=%s, au5_msg=%s WHERE ht_tt_seq=%s'
+        sql = 'UPDATE ht_tt SET au5=%s, au5_msg=%s, au5_reg_dt=NOW() WHERE ht_tt_seq=%s'
     elif au_x == '6':
-        sql = 'UPDATE ht_tt SET au6=%s, au6_msg=%s WHERE ht_tt_seq=%s'
+        sql = 'UPDATE ht_tt SET au6=%s, au6_msg=%s, au6_reg_dt=NOW() WHERE ht_tt_seq=%s'
 
     with conn.cursor() as curs:        
         common.logqry(sql, param)
@@ -1376,6 +1376,18 @@ def select_one_HtTtFile(ht_tt_file_seq):
         row = curs.fetchone()
         return row
 
+#  거래내역 리스트 총합계 (총 양도차익)
+def select_HtTtList_sumIncomeAmount(ht_tt_seq):
+    param = (ht_tt_seq, )
+    sql = "SELECT sum(income_amount) sum_income_amount  FROM ht_tt_list WHERE ht_tt_seq = %s"
+
+    with conn.cursor() as curs: 
+        common.logqry(sql, param)
+        curs.execute(sql, param)
+        
+        # 데이타 Fetch
+        row = curs.fetchone()
+        return row['sum_income_amount']
 
 # 거래내역 리스트
 def select_HtTtList_by_htTtSeq(ht_tt_seq):

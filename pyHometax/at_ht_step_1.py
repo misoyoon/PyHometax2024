@@ -25,7 +25,7 @@ AU_X = '1'
 (driver, user_info, verify_stamp) = step_common.init_step_job()
 # -------------------------------------------------------------
 
-driver.close()
+#driver.close()
 # while True:
 #     logt("연습용 테스트 입니다.  향후 삭제해야합니다.", 1)
 #     continue
@@ -115,7 +115,8 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
 
             try:
                 logt("페이지이동: '신고/납부' 메뉴 이동", 0.5)
-                url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml&tmIdx=4&tm2lIdx=0405050000&tm3lIdx='
+                #url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml&tmIdx=4&tm2lIdx=0405050000&tm3lIdx='
+                url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml&tmIdx=0&tm2lIdx=&tm3lIdx='
                 driver.get(url)
                 logt("iframe 이동", 3)
                 sc.move_iframe(driver)
@@ -202,12 +203,13 @@ def do_step1(driver: WebDriver, ht_info):
     logt("------------------------------------------------------------------")
 
     ht_tt_seq = ht_info['ht_tt_seq']
+    group_id = ht_info['group_id']
     
     # 홈택스 정보 초기화
     dbjob.update_HtTt_initHometaxInfo(ht_tt_seq)
     
     # 작업폴더 : 예 - D:\WWW\JNK\files\hometax\003\003259\work\
-    work_dir = ht_file.get_work_dir_by_htTtSeq(ht_tt_seq)
+    work_dir = ht_file.get_work_dir_by_htTtSeq(group_id, ht_tt_seq)
 
     try:
         time.sleep(0.2)
@@ -505,7 +507,7 @@ def do_step1(driver: WebDriver, ht_info):
         time.sleep(0.5)
 
         sc.move_iframe(driver, 'UTECMAAA04_iframe', 0.1)
-        sc.set_input_value_by_id(driver, 'ntnCd',  'US', '국가코드', 1.0)
+        sc.set_input_value_by_id(driver, 'ntnCd',  'US', '국가코드', 0.5)
         sc.click_button_by_id(driver, 'trigger5', '조회', 1)
         # 결과조회 테이블에서 첫번째 결과인 미국 선택
         time.sleep(0.3)
@@ -535,8 +537,8 @@ def do_step1(driver: WebDriver, ht_info):
         
         # 추가히기 버튼 클릭        
         sc.click_button_by_id(driver, 'trigger101', '등록(추가)하기')
-        alert_ret = sc.click_alert(driver, '양도가액이 취득유형별 양도주식수 * 주당양도가액과 같지 않습니다.')
-        alert_ret = sc.click_alert(driver, '취득가액이 취득유형별 양도주식수 * 주당취득가액과 같지 않습니다.')
+        #alert_ret = sc.click_alert(driver, '양도가액이 취득유형별 양도주식수 * 주당양도가액과 같지 않습니다.')
+        #alert_ret = sc.click_alert(driver, '취득가액이 취득유형별 양도주식수 * 주당취득가액과 같지 않습니다.')
         alert_ret = sc.click_alert(driver, '입력한 주식양도소득금액명세서를 등록하시겠습니까?')
         
     sc.click_button_by_id(driver, 'trigger2', '저장 후 다음이동')
@@ -559,22 +561,36 @@ def do_step1(driver: WebDriver, ht_info):
     #sc.set_input_value_by_id(driver, 'edtRtnsAdtTxamt', "100000" , '테스트용(삭졔예정)' )
     #sc.set_input_value_by_id(driver, 'edtPmtInsyAdtTxamt', "100000" , '테스트용(삭졔예정)' )
 
-    # 기본공제금액 입력
-    driver.find_element(By.ID, 'edtTriBscDdcAmt').clear()
-    driver.find_element(By.ID, 'edtTriBscDdcAmt').send_keys("2500000")
-    # (주의)재계산 시간을 벌기 위해 다른 곳에 들렸다가 이동하기 
-    driver.find_element(By.ID, 'edtReTxamt').send_keys("0")   #edtReTxamt: 감면세액
-    time.sleep(0.5)
-
-
-    # 250만원이 있는지 없는지 검사 
-    input = driver.find_element(By.ID, 'edtTriBscDdcAmt')
-    감면액확인 = input.get_attribute('value')
-    logt("입력된 공제금액 확인=%s" % 감면액확인)
-    if 감면액확인 == "0" or 감면액확인 == '':
+    # (홈택스 페이지에 있는) 양도소득금액
+    number_string = driver.find_element(By.ID, 'edtTriAmt').get_attribute("value")
+    hometax_total_income_amount = int(number_string.replace(",", ""))
+    
+    # 관리홈피 거래내역 리스트의 총 양도소득금액
+    sum_income_amount = dbjob.select_HtTtList_sumIncomeAmount(ht_tt_seq)
+    if ht_info['other_sec_data'] == 'N' and hometax_total_income_amount != sum_income_amount:
+        raise BizException("거래내역 불일치","관리페이지 거래내역리스트와 홈택스 신고된 양도소득금액이 일치하지 않습니다.")
+    
+    if hometax_total_income_amount >= 2_500_000:
+        # 기본공제금액 입력
         driver.find_element(By.ID, 'edtTriBscDdcAmt').clear()
         driver.find_element(By.ID, 'edtTriBscDdcAmt').send_keys("2500000")
-        driver.find_element(By.ID, 'edtReTxamt').send_keys("0")
+        
+    # JavaScript를 사용하여 input 요소에 포커스 설정
+    input_element = driver.find_element(By.ID,"edtReTxamt")
+    driver.execute_script("arguments[0].focus();", input_element)
+
+    # (주의)재계산 시간을 벌기 위해 다른 곳에 들렸다가 이동하기 
+    #driver.find_element(By.ID, 'edtReTxamt').send_keys("0")   #edtReTxamt: 감면세액
+        
+    time.sleep(0.3)
+    
+    #2024년 신규메시지 등장
+    #양도소득금액 + 기신고 · 결정 · 경정된 양도소득금액 합계 - 소득감면대상소득금액 계산된 금액이 0보다 큰 경우에만 기본공제 입력이 가능합니다
+    # try:
+    #     sc.click_alert(driver, '양도소득금액 + 기신고')
+    # except :
+    #     ...
+        
 
     time.sleep(0.5)
     sc.click_button_by_id(driver, 'trigger28', '등록하기')
@@ -594,12 +610,6 @@ def do_step1(driver: WebDriver, ht_info):
     except Exception as e:
         ...
 
-
-    
-    #trigger28 
-    #cap_image_1 = work_dir + "capture1.png"
-    #logt("이미지캡쳐: %s" %  cap_image_1)
-    #driver.save_screenshot(cap_image_1)
         
     sc.click_button_by_id(driver, 'btnProcess', '저장 후 다음이동')
     sc.click_alert(driver, "저장 후 다음화면으로 이동하시겠습니까?", 0.5)
@@ -613,12 +623,10 @@ def do_step1(driver: WebDriver, ht_info):
 
 
 
-    #sc.click_button_by_id(driver, 'btnProcess', '신고서 제출')
-    #sc.click_alert(driver, "신고서를 제출하시겠습니까?", 0.5)
-    감면액확인 = driver.find_element(By.ID, 'genTbody_3_genTr_1_txtItem').text
-    if 감면액확인 != '2,500,000':
-        dbjob.insert_auHistory(ht_tt_seq, ht_info['reg_id'], AU_X, f"감면액 입력 오류로 이번건 종료 후 다음 처리")
-        return
+    #감면액확인 = driver.find_element(By.ID, 'genTbody_3_genTr_1_txtItem').text
+    #if 감면액확인 != '2,500,000':
+    #    dbjob.insert_auHistory(ht_tt_seq, ht_info['reg_id'], AU_X, f"감면액 입력 오류로 이번건 종료 후 다음 처리")
+    #    return
     
     # 분납계산하기
     분납액1 = 0
@@ -711,6 +719,7 @@ def do_step1(driver: WebDriver, ht_info):
 
 if __name__ == '__main__':
     if driver:
+        driver.set_window_size(1500, 1100)
         do_task(driver, user_info, verify_stamp) 
     
     logi(f"{AU_X}단계 작업 완료")

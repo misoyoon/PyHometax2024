@@ -88,12 +88,13 @@ def do_step1(driver: WebDriver, ht_info):
     logt("------------------------------------------------------------------")
 
     ht_tt_seq = ht_info['ht_tt_seq']
+    group_id = ht_info['group_id']
     
     # 홈택스 정보 초기화
     dbjob.update_HtTt_initHometaxInfo(ht_tt_seq)
     
     # 작업폴더 : 예 - D:\WWW\JNK\files\hometax\003\003259\work\
-    work_dir = ht_file.get_work_dir_by_htTtSeq(ht_tt_seq)
+    work_dir = ht_file.get_work_dir_by_htTtSeq(group_id, ht_tt_seq)
 
     dbjob.insert_auHistory("1.기본정보 진입", "")
     

@@ -70,7 +70,7 @@ def wait_id_and_click(driver: WebDriver, id, timeout=5):
     element.click()
 
 def go_main_page(driver: WebDriver):
-    driver.get('https://www.hometax.go.kr/')
+    driver.get('https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml')
     #driver.get("https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml")
     driver.implicitly_wait(10)
 
