@@ -39,10 +39,10 @@ def main():
     # #############################################################
     
     if len(git_infos) == 0:
-        logi("진행할 작업이 없습니다. 프로그램을 종료합니다.")
+        logt("진행할 작업이 없습니다. 프로그램을 종료합니다.")
         sys.exit()
     else:
-        logi(f"홈택스 종합소득세 파일다운로드 작업 ::: 총 실행 건수 = {len(git_infos)}")
+        logt(f"홈택스 종합소득세 파일다운로드 작업 ::: 총 실행 건수 = {len(git_infos)}")
         
         
     driver: WebDriver = auto_login.init_selenium()
@@ -52,12 +52,12 @@ def main():
     i = 0
     for git_info in git_infos:
         i += 1
-        logi(f">>>>>>> 현재 실행 위치 {i} / {len(git_infos)} <<<<<<<<")
-        logi(f"======= {git_info['git_seq']} =  {git_info['nm']}  {git_info['ssn1']}{git_info['ssn2']} :  {git_info['hometax_id']} / {git_info['hometax_pw']}")
+        logt(f">>>>>>> 현재 실행 위치 {i} / {len(git_infos)} <<<<<<<<")
+        logt(f"======= {git_info['git_seq']} =  {git_info['nm']}  {git_info['ssn1']}{git_info['ssn2']} :  {git_info['hometax_id']} / {git_info['hometax_pw']}")
 
         git_seq = git_info['git_seq']
         
-        logi("홈텍스 메인페이지 이동")
+        logt("홈텍스 메인페이지 이동")
         driver.get("https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml")
         driver.implicitly_wait(10)
 
@@ -68,14 +68,14 @@ def main():
         login_info['login_pw'] = git_info['hometax_pw']
         
         if git_info['hometax_id_confirm'] != 'Y':
-            logi("이전에 로그인에 실패하였습니다.  홈택스ID/PWD를 확인 후 다시 시도하세요")
+            logt("이전에 로그인에 실패하였습니다.  홈택스ID/PWD를 확인 후 다시 시도하세요")
             
         
         # 자동로그인 처리
         logt("로그인 시간", 1)
         auto_login.login_guest(driver, login_info)
         driver.set_window_size(1350, 1700)
-        logi("로그인 완료")
+        logt("로그인 완료")
         
         #
         try:
@@ -88,7 +88,7 @@ def main():
             if alert_msg.find("비밀번호가") >= 0  :   # 비밀번호가 [3]회 잘못 입력되었습니다
                 dbjob.update_git_hometaxIdConfirm(group_id, git_seq, 'N')
                 alert.accept()
-                logi("비밀번호 오류로 다음 차례 진행 ~~~~~~~~")
+                logt("비밀번호 오류로 다음 차례 진행 ~~~~~~~~")
                 continue
         except Exception as e:
             logt("정상로그인")
@@ -550,7 +550,7 @@ def main():
         sc.click_button_by_id(driver, 'checkbox1_input_0', '이에 동의합니다', 1)
         sc.click_button_by_id(driver, 'trigger9', '제출화면 이동', 1)
 
-        logi("다른 오픈된 윈도우 닫기")
+        logt("다른 오픈된 윈도우 닫기")
         
         if len(driver.window_handles) > 1:
             driver.switch_to.window(driver.window_handles[1])

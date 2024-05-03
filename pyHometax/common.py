@@ -17,7 +17,7 @@ import config
 #         data = q.get()
 #         #if data is None:
 #         #    break
-#         logi(f'#################################################### AU_HISTORY_LOG: {data}')
+#         logt(f'#################################################### AU_HISTORY_LOG: {data}')
 #         dbjob.insert_auHistory(data['title'], data['message'])
 #     print('AU_HISTORY_LOG : DONE')
 
@@ -30,6 +30,8 @@ import config
 
 import logging
 logger = None
+
+
 def set_logger(log_filename, level=logging.INFO):
     global logger
     
@@ -63,10 +65,6 @@ def logd(msg):
     cur_level = config.LOG_LEVEL
     logger.debug(msg)
 
-# INFO        
-def logi(msg):
-    cur_level = config.LOG_LEVEL
-    logger.info(msg)
 
 # WARN
 def logw(msg):
@@ -78,7 +76,6 @@ def loge(msg):
     logger.error(msg)
 
 
-
 def logt(title, t=0):
     # dbjob.insert_auHistory(title, "");
 
@@ -86,8 +83,11 @@ def logt(title, t=0):
         logger.info(title)
     else :
         logger.info(f"[{str(t)}초 후] {title}")
-        time.sleep(t)
+        time.sleep(t * config.TIME_WEIGHT)
 
+def ht_sleep(t=0):
+    if t>0:
+        time.sleep(t * config.TIME_WEIGHT)
 
 def logqry(sql, data=()):
     # 작업 진행 jobs 쿼리는 출력하기

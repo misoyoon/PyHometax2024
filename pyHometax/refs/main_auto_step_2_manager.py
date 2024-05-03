@@ -46,9 +46,9 @@ for_one_user_id   = "MANAGER_ID"
 
 
 
-logi("###########################################")
-logi("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
-logi("###########################################")
+logt("###########################################")
+logt("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
+logt("###########################################")
 
 
 dbjob.set_global(group_id, None, None, None, None) 
@@ -59,25 +59,25 @@ if __name__ == '__main__':
     logt("홈택스 양도소득세 자동신고 서버 기동 !!!")
     logt("  ==> 신고2단계 : 홈택스 다운로드 (납부서, 접수증,계산명세서)")
 
-    logi("# ------------------------------------------------------------------")
-    logi("담당자 작업 정보 : GROUP_DI=%s, ID=%s, Name=%s" % (group_id, for_one_user_id, for_one_user_name))
-    logi("# ------------------------------------------------------------------")
+    logt("# ------------------------------------------------------------------")
+    logt("담당자 작업 정보 : GROUP_DI=%s, ID=%s, Name=%s" % (group_id, for_one_user_id, for_one_user_name))
+    logt("# ------------------------------------------------------------------")
 
     # 한번에 처리한 자료수
     batch_bundle_count = config.BATCH_BUNDLE_COUNT
-    logi("배치 처리 건수=%d" % batch_bundle_count)
+    logt("배치 처리 건수=%d" % batch_bundle_count)
 
     dbjob.set_global(group_id, None, for_one_user_id, None, au_step)   # (v_host_name, v_user_id, v_ht_tt_seq, v_au_step):
 
     # 작업리스트
     jobs = dbjob.select_auto_2_관리자(group_id, for_one_user_id, config.BATCH_BUNDLE_COUNT)
 
-    logi("-------------------------------------------------------------")
-    logi("%s님의 이번 처리 건수=%d" % (for_one_user_name, len(jobs)))
+    logt("-------------------------------------------------------------")
+    logt("%s님의 이번 처리 건수=%d" % (for_one_user_name, len(jobs)))
     if len(jobs) == 0:
-        logi("처리할 자료가 없습니다.")
+        logt("처리할 자료가 없습니다.")
         exit()
-    logi("-------------------------------------------------------------")
+    logt("-------------------------------------------------------------")
 
 
     # ------------------------------------------------------------------
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     # 2단계 홈택스 파일다운로드 리스트
 
     if len(jobs) == 0:
-        logi("작업할 리스트가 없습니다. 작업종료")    
+        logt("작업할 리스트가 없습니다. 작업종료")    
 
     else:
         try:

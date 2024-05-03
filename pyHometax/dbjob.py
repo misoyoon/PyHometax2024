@@ -191,6 +191,8 @@ def select_next_au1(group_id, worker_id, start_seq=0, end_seq=0):
             AND data_type='AUTO'
             AND step_cd='REPORT'
             AND ( au1 is Null or au1 = '' )
+            -- AND notify_type_cd = 'POST'
+            -- AND ht_tt_seq = 40696
     '''
     
     if worker_id and worker_id.upper() != "MANAGER_ID":
@@ -237,10 +239,7 @@ def select_next_au2(group_id:str, worker_id:str, start_seq=0, end_seq=0):
             AND step_cd='REPORT' 
             -- AND step_cd='COMPLETE' 
             AND au1='S' 
-            AND ( au2 IS NULL OR au2 = 'S'
-                -- OR au2 = 'E'
-                )
-            and ht_tt_seq in (40000)
+            AND ( au2 is Null or au2 = '' )
     '''
     
     if worker_id and worker_id.upper() != "MANAGER_ID":
@@ -279,6 +278,7 @@ def select_next_au3(group_id:str, worker_id:str, start_seq=0, end_seq=0):
             AND step_cd='REPORT' 
             AND au1='S' 
             AND ( au3 IS NULL OR au3 = '' )
+            AND notify_type_cd = 'POST'
     '''
     
     if worker_id and worker_id.upper() != "MANAGER_ID":
@@ -428,6 +428,48 @@ def select_next_au6(group_id:str, worker_id:str, start_seq=0, end_seq=0):
         conn.commit()
     
     return rs
+
+
+
+# 4단계 - 위택스 dcrl 연결하기용
+def select_hTtT_au4_for_dclrid(group_id:str):
+    param = (group_id, )
+    rs = None
+        
+    sql = '''
+        SELECT *  FROM ht_tt 
+        WHERE group_id=%s
+            AND ht_series_yyyymm = '202405'
+            AND (data_type='AUTO' OR data_type='SEMI')
+            AND step_cd='REPORT' 
+            AND au3='S' 
+            AND wetax_dclrid is null 
+    '''
+    
+    common.logqry(sql, param)
+    with conn.cursor() as curs:
+        curs.execute(sql, param)
+        rs = curs.fetchall()
+        common.logrs(rs)
+        conn.commit()
+    
+    return rs
+
+
+def update_HtTt_wetaxDclrId(ht_tt_seq, wetax_dclrId, wetax_paid_yn):
+    #global conn    
+    param = (wetax_dclrId, wetax_paid_yn, ht_tt_seq)
+    sql = "UPDATE ht_tt SET wetax_dclrId=%s, wetax_paid_yn=%s WHERE ht_tt_seq=%s"
+
+    try:    
+        with conn.cursor() as curs:  
+            common.logqry(sql, param)
+            curs.execute(sql, param)
+            conn.commit()
+    except Exception as e:
+        # 변경 사항 롤백
+        conn.rollback()
+        print(f"오류 발생: {e}")
 
 
 # Group 정보 (Kakao알림톡 정보 포함)
@@ -629,236 +671,236 @@ def select_홈택스_신고리스트(group_id, user_id, batch_count=100000):
 
 
 # =============================================================================== select_auto_1
-###################################################################
-# 1단계 -  홈택스 신고
-###################################################################
-# batch_count : 한번에 몇 개씩 가져올지 결정
-def select_auto_1(group_id, user_id, batch_count=100):
-    param = (group_id, user_id, batch_count)
-    sql = '''
-        SELECT *  
-        FROM ht_tt 
-        WHERE ifnull(use_yn, 'Y') != 'N'
-            AND group_id=%s
-            AND ht_series_yyyymm = '202405'
-            AND data_type='AUTO'
-            AND step_cd='REPORT'
-            AND (
-                au1 is Null or au1 = '' 
-                -- or au1='E'
-            )
-            AND reg_id = %s
-            -- and ht_tt_seq = 30032
-        ORDER BY ht_tt_seq asc
-        LIMIT 0, %s
-    '''
+# ###################################################################
+# # 1단계 -  홈택스 신고
+# ###################################################################
+# # batch_count : 한번에 몇 개씩 가져올지 결정
+# def select_auto_1(group_id, user_id, batch_count=100):
+#     param = (group_id, user_id, batch_count)
+#     sql = '''
+#         SELECT *  
+#         FROM ht_tt 
+#         WHERE ifnull(use_yn, 'Y') != 'N'
+#             AND group_id=%s
+#             AND ht_series_yyyymm = '202405'
+#             AND data_type='AUTO'
+#             AND step_cd='REPORT'
+#             AND (
+#                 au1 is Null or au1 = '' 
+#                 -- or au1='E'
+#             )
+#             AND reg_id = %s
+#             -- and ht_tt_seq = 40696
+#         ORDER BY ht_tt_seq asc
+#         LIMIT 0, %s
+#     '''
     
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
-        rs = curs.fetchall()
-        common.logrs(rs)
-        return rs
+#     with conn.cursor() as curs:
+#         common.logqry(sql, param)
+#         curs.execute(sql, param)
+#         rs = curs.fetchall()
+#         common.logrs(rs)
+#         return rs
 
 
-# 2단계 - (정상적인 상황) 홈택스 관련 문서 다운로드
-def select_auto_2(group_id, user_id:str, batch_count=100):
-    param = (group_id, batch_count)
+# # 2단계 - (정상적인 상황) 홈택스 관련 문서 다운로드
+# def select_auto_2(group_id, user_id:str, batch_count=100):
+#     param = (group_id, batch_count)
 
-    sql = '''
-        SELECT *  FROM ht_tt 
-        WHERE ifnull(use_yn, 'Y') != 'N'
-            AND group_id=%s
-            AND ht_series_yyyymm = '202405'
-            AND (data_type='AUTO' OR data_type='SEMI')
-            AND step_cd='REPORT' 
-            -- AND sec_company_cd = 'SEC07' and  (import_seq = '12' or  import_seq = '13' or  import_seq = '14')
-            AND au1='S' 
-            AND (
-                au2 IS NULL 
-                OR au2 = 'S'
-                OR au2 = 'E'
-                )
-        '''
+#     sql = '''
+#         SELECT *  FROM ht_tt 
+#         WHERE ifnull(use_yn, 'Y') != 'N'
+#             AND group_id=%s
+#             AND ht_series_yyyymm = '202405'
+#             AND (data_type='AUTO' OR data_type='SEMI')
+#             AND step_cd='REPORT' 
+#             -- AND sec_company_cd = 'SEC07' and  (import_seq = '12' or  import_seq = '13' or  import_seq = '14')
+#             AND au1='S' 
+#             AND (
+#                 au2 IS NULL 
+#                 OR au2 = 'S'
+#                 OR au2 = 'E'
+#                 )
+#         '''
         
-    if user_id.upper() != "MANAGER_ID":
-        sql = sql + " AND reg_id = %s "
-        param = (group_id, user_id, batch_count)
+#     if user_id.upper() != "MANAGER_ID":
+#         sql = sql + " AND reg_id = %s "
+#         param = (group_id, user_id, batch_count)
 
-    sql = sql + '''
-        ORDER BY ht_tt_seq asc
-        LIMIT 0, %s
-    '''
+#     sql = sql + '''
+#         ORDER BY ht_tt_seq asc
+#         LIMIT 0, %s
+#     '''
     
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
+#     with conn.cursor() as curs:
+#         common.logqry(sql, param)
+#         curs.execute(sql, param)
         
-        # 데이타 Fetch
-        rs = curs.fetchall()
-        common.logrs(rs)
-        return rs
+#         # 데이타 Fetch
+#         rs = curs.fetchall()
+#         common.logrs(rs)
+#         return rs
 
 
-# =============================================================================== select_auto_3
-# 3단계 - 위택스 신고
-def select_auto_3(group_id, user_id, batch_count=100):
-    param = (group_id, batch_count, )
-    sql = '''
-        SELECT *  FROM ht_tt 
-        WHERE group_id=%s
-            AND ht_series_yyyymm = '202405'
-            AND step_cd='REPORT' 
-            -- AND data_type='AUTO' 
-            -- AND hometax_income_tax > 0
-            AND au1='S' 
-            AND (
-                au3 IS NULL 
-                OR au3 = ''
-                OR au3 = 'E'
-                )
-            -- AND ht_tt_seq = 8016
-    '''
+# # =============================================================================== select_auto_3
+# # 3단계 - 위택스 신고
+# def select_auto_3(group_id, user_id, batch_count=100):
+#     param = (group_id, batch_count, )
+#     sql = '''
+#         SELECT *  FROM ht_tt 
+#         WHERE group_id=%s
+#             AND ht_series_yyyymm = '202405'
+#             AND step_cd='REPORT' 
+#             -- AND data_type='AUTO' 
+#             -- AND hometax_income_tax > 0
+#             AND au1='S' 
+#             AND (
+#                 au3 IS NULL 
+#                 OR au3 = ''
+#                 OR au3 = 'E'
+#                 )
+#             -- AND ht_tt_seq = 8016
+#     '''
     
-    if user_id.upper() != "MANAGER_ID":
-        sql = sql + " AND reg_id = %s "
-        param = (group_id, user_id, batch_count)
+#     if user_id.upper() != "MANAGER_ID":
+#         sql = sql + " AND reg_id = %s "
+#         param = (group_id, user_id, batch_count)
 
-    sql = sql + '''
-        ORDER BY ht_tt_seq asc
-        LIMIT 0, %s
-    '''
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
+#     sql = sql + '''
+#         ORDER BY ht_tt_seq asc
+#         LIMIT 0, %s
+#     '''
+#     with conn.cursor() as curs:
+#         common.logqry(sql, param)
+#         curs.execute(sql, param)
         
-        # 데이타 Fetch
-        rs = curs.fetchall()
-        common.logrs(rs)
-        return rs
+#         # 데이타 Fetch
+#         rs = curs.fetchall()
+#         common.logrs(rs)
+#         return rs
 
-# 3단계 - 위택스 신고 취소하기
-def select_auto_3_위택스_취소목록(group_id, batch_count=500):
-    param = (group_id, batch_count, )
-    sql = '''
-        SELECT *  FROM ht_tt 
-        WHERE group_id=%s
-            AND ht_series_yyyymm = '202405'
-            AND sec_company_cd = 'SEC07'
-            AND import_seq = 13
-            AND au6 is null
-        ORDER BY ht_tt_seq asc
-        LIMIT 0, %s
-    '''
+# # 3단계 - 위택스 신고 취소하기
+# def select_auto_3_위택스_취소목록(group_id, batch_count=500):
+#     param = (group_id, batch_count, )
+#     sql = '''
+#         SELECT *  FROM ht_tt 
+#         WHERE group_id=%s
+#             AND ht_series_yyyymm = '202405'
+#             AND sec_company_cd = 'SEC07'
+#             AND import_seq = 13
+#             AND au6 is null
+#         ORDER BY ht_tt_seq asc
+#         LIMIT 0, %s
+#     '''
     
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
+#     with conn.cursor() as curs:
+#         common.logqry(sql, param)
+#         curs.execute(sql, param)
         
-        # 데이타 Fetch
-        rs = curs.fetchall()
-        common.logrs(rs)
-        return rs
+#         # 데이타 Fetch
+#         rs = curs.fetchall()
+#         common.logrs(rs)
+#         return rs
 
 
-# =============================================================================== select_auto_4
-# 4단계 - 위택스 다운로드
-def select_auto_4(group_id, user_id, batch_count=100):
-    param = (group_id, batch_count, )
-    sql = '''
-        SELECT *  FROM ht_tt 
-        WHERE ifnull(use_yn, 'Y') != 'N'
-            AND group_id=%s
-            AND ht_series_yyyymm = '202405'
-            AND step_cd='REPORT' 
-            -- AND sec_company_cd = 'SEC07' and  (import_seq = '12' or  import_seq = '13' or  import_seq = '14')
-            AND au1='S' AND au2='S' AND au3='S' 
-            AND (au4 is null or au4 = 'E')
-    '''
+# # =============================================================================== select_auto_4
+# # 4단계 - 위택스 다운로드
+# def select_auto_4(group_id, user_id, batch_count=100):
+#     param = (group_id, batch_count, )
+#     sql = '''
+#         SELECT *  FROM ht_tt 
+#         WHERE ifnull(use_yn, 'Y') != 'N'
+#             AND group_id=%s
+#             AND ht_series_yyyymm = '202405'
+#             AND step_cd='REPORT' 
+#             -- AND sec_company_cd = 'SEC07' and  (import_seq = '12' or  import_seq = '13' or  import_seq = '14')
+#             AND au1='S' AND au2='S' AND au3='S' 
+#             AND (au4 is null or au4 = 'E')
+#     '''
 
-    if user_id.upper() != "MANAGER_ID":
-        sql = sql + " AND reg_id = %s "
-        param = (group_id, user_id, batch_count)
+#     if user_id.upper() != "MANAGER_ID":
+#         sql = sql + " AND reg_id = %s "
+#         param = (group_id, user_id, batch_count)
 
-    sql = sql + '''
-            -- AND ht_tt_seq = 2
-        ORDER BY ht_tt_seq asc
-        LIMIT 0, %s
-    '''
+#     sql = sql + '''
+#             -- AND ht_tt_seq = 2
+#         ORDER BY ht_tt_seq asc
+#         LIMIT 0, %s
+#     '''
     
-    with conn.cursor() as curs:    
-        common.logqry(sql, param)
-        curs.execute(sql, param)
+#     with conn.cursor() as curs:    
+#         common.logqry(sql, param)
+#         curs.execute(sql, param)
         
-        # 데이타 Fetch
-        rs = curs.fetchall()
-        common.logrs(rs)
-        return rs
+#         # 데이타 Fetch
+#         rs = curs.fetchall()
+#         common.logrs(rs)
+#         return rs
 
 
-# =============================================================================== select_auto_5
-# 5단계 - 홈택스 증빙자료 업로드
-def select_auto_5(group_id, user_id, batch_count=100):
-    param = (group_id, batch_count, )
-    sql = '''
-        SELECT *  FROM ht_tt 
-        WHERE   group_id=%s
-            AND ht_series_yyyymm = '202405'
-            AND data_type IN ('AUTO', 'SEMI')
-            AND step_cd  IN ('REPORT_DONE', 'COMPLETE')
-            AND au5 is null
-            -- AND au5 = 'E'
-    '''
+# # =============================================================================== select_auto_5
+# # 5단계 - 홈택스 증빙자료 업로드
+# def select_auto_5(group_id, user_id, batch_count=100):
+#     param = (group_id, batch_count, )
+#     sql = '''
+#         SELECT *  FROM ht_tt 
+#         WHERE   group_id=%s
+#             AND ht_series_yyyymm = '202405'
+#             AND data_type IN ('AUTO', 'SEMI')
+#             AND step_cd  IN ('REPORT_DONE', 'COMPLETE')
+#             AND au5 is null
+#             -- AND au5 = 'E'
+#     '''
 
-    if user_id.upper() != "MANAGER_ID":
-        sql = sql + " AND reg_id = %s "
-        param = (group_id, user_id, batch_count)
+#     if user_id.upper() != "MANAGER_ID":
+#         sql = sql + " AND reg_id = %s "
+#         param = (group_id, user_id, batch_count)
 
-    sql = sql + '''
-            -- AND ht_tt_seq = 2
-        ORDER BY ht_tt_seq asc
-        LIMIT 0, %s
-    '''
+#     sql = sql + '''
+#             -- AND ht_tt_seq = 2
+#         ORDER BY ht_tt_seq asc
+#         LIMIT 0, %s
+#     '''
     
-    with conn.cursor() as curs:    
-        common.logqry(sql, param)
-        curs.execute(sql, param)
+#     with conn.cursor() as curs:    
+#         common.logqry(sql, param)
+#         curs.execute(sql, param)
         
-        # 데이타 Fetch
-        rs = curs.fetchall()
-        common.logrs(rs)
-        return rs
+#         # 데이타 Fetch
+#         rs = curs.fetchall()
+#         common.logrs(rs)
+#         return rs
 
-# 5단계(점검용) - 증빙자료제출이 잘 되어있는지 확인 (자동/반자동/수동 포함)
-def select_auto_5_check(group_id, user_id, batch_count=100):
-    param = (group_id, batch_count, )
-    sql = '''
-        SELECT *  FROM ht_tt 
-        WHERE ifnull(use_yn, 'Y') != 'N'
-            AND group_id=%s
-            AND ht_series_yyyymm = '202405'
-            AND step_cd != 'CANCEL' 
-            AND au6 is NULL
-    '''
+# # 5단계(점검용) - 증빙자료제출이 잘 되어있는지 확인 (자동/반자동/수동 포함)
+# def select_auto_5_check(group_id, user_id, batch_count=100):
+#     param = (group_id, batch_count, )
+#     sql = '''
+#         SELECT *  FROM ht_tt 
+#         WHERE ifnull(use_yn, 'Y') != 'N'
+#             AND group_id=%s
+#             AND ht_series_yyyymm = '202405'
+#             AND step_cd != 'CANCEL' 
+#             AND au6 is NULL
+#     '''
 
-    if user_id.upper() != "MANAGER_ID":
-        sql = sql + " AND reg_id = %s "
-        param = (group_id, user_id, batch_count)
+#     if user_id.upper() != "MANAGER_ID":
+#         sql = sql + " AND reg_id = %s "
+#         param = (group_id, user_id, batch_count)
 
-    sql = sql + '''
-            -- AND ht_tt_seq in (4724, 4825)
-        ORDER BY ht_tt_seq asc
-        LIMIT 0, %s
-    '''
+#     sql = sql + '''
+#             -- AND ht_tt_seq in (4724, 4825)
+#         ORDER BY ht_tt_seq asc
+#         LIMIT 0, %s
+#     '''
     
-    with conn.cursor() as curs:
-        common.logqry(sql, param)
-        curs.execute(sql, param)
+#     with conn.cursor() as curs:
+#         common.logqry(sql, param)
+#         curs.execute(sql, param)
         
-        # 데이타 Fetch
-        rs = curs.fetchall()
-        common.logrs(rs)
-        return rs
+#         # 데이타 Fetch
+#         rs = curs.fetchall()
+#         common.logrs(rs)
+#         return rs
 
 
 # 1단계 정보 업데이트
@@ -933,6 +975,22 @@ def update_HtTt_hometaxIncomeTax(ht_tt_seq, hometax_income_tax):
         # 변경 사항 롤백
         conn.rollback()
         print(f"오류 발생: {e}")
+
+def append_HtTt_remark(ht_tt_seq, msg):
+    #global conn    
+    param = (f"\n {msg}", ht_tt_seq)
+    sql = "UPDATE ht_tt SET remark = concat(remark, %s) WHERE ht_tt_seq=%s"
+
+    try:    
+        with conn.cursor() as curs:  
+            common.logqry(sql, param)
+            curs.execute(sql, param)
+            conn.commit()
+    except Exception as e:
+        # 변경 사항 롤백
+        conn.rollback()
+        print(f"오류 발생: {e}")
+
 
 def update_HtTt_audit_tmp1(ht_tt_seq, audit_tmp1):
     #global conn    

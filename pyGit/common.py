@@ -22,7 +22,7 @@ def logd(msg):
         log_base("DEBUG", msg)
 
 # INFO        
-def logi(msg):
+def logt(msg):
     cur_level = config.LOG_LEVEL
     if cur_level == "INFO" or cur_level == "DEBUG":
         log_base("INFO", msg)

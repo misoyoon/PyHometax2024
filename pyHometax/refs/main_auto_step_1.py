@@ -41,7 +41,7 @@ group_id = ""
 for_one_user_name = ""
 for_one_user_id   = ""
 if len(sys.argv) == 1:
-    logi("실행할 담당자 정보가 없습니다.")
+    logt("실행할 담당자 정보가 없습니다.")
     exit()
 else :
     try:
@@ -61,9 +61,9 @@ else :
         exit()
 
 
-logi("###########################################")
-logi("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
-logi("###########################################")
+logt("###########################################")
+logt("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
+logt("###########################################")
 
 
 dbjob.set_global(group_id, None, None, None, au_step) 
@@ -73,9 +73,9 @@ if __name__ == '__main__':
 
     logt(f"홈택스 양도소득세 자동신고 서버 기동 !!! - {au_step}단계")
 
-    logi("# ------------------------------------------------------------------")
-    logi("담당자 작업 정보 : GROUP_ID=%s, ID=%s, Name=%s" % (group_id, for_one_user_id, for_one_user_name))
-    logi("# ------------------------------------------------------------------")
+    logt("# ------------------------------------------------------------------")
+    logt("담당자 작업 정보 : GROUP_ID=%s, ID=%s, Name=%s" % (group_id, for_one_user_id, for_one_user_name))
+    logt("# ------------------------------------------------------------------")
 
     # 세무대리인(담당자) 리스트
     user_list = dbjob.get_worker_list(group_id, for_one_user_id)
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     # 담당자별로 한번에 처리한 자료수
     batch_bundle_count = config.BATCH_BUNDLE_COUNT
-    logi("배치 처리 건수=%d" % batch_bundle_count)
+    logt("배치 처리 건수=%d" % batch_bundle_count)
 
     # 무한 루프
     while True:  
@@ -98,17 +98,17 @@ if __name__ == '__main__':
             user_name = user_info['name']
             user_tel  = user_info['sms_num']
             
-            logi('다음 처리 담당자 정보 : Index=%d, ID=%s, Name=%s' % (user_idx, user_id, user_name))
+            logt('다음 처리 담당자 정보 : Index=%d, ID=%s, Name=%s' % (user_idx, user_id, user_name))
 
             # 홈택스 신고서제출 자료            
             jobs = dbjob.select_auto_1(group_id, user_id,  batch_bundle_count)
 
-            logi("-------------------------------------------------------------")
-            logi("%s님의 이번 처리 건수=%d" % (user_name, len(jobs)))
+            logt("-------------------------------------------------------------")
+            logt("%s님의 이번 처리 건수=%d" % (user_name, len(jobs)))
             if len(jobs) == 0:
-                logi("처리할 자료가 없습니다.")
+                logt("처리할 자료가 없습니다.")
                 exit()
-            logi("-------------------------------------------------------------")
+            logt("-------------------------------------------------------------")
 
             # 셀레니움 드라이버
             driver: WebDriver = auto_login.init_selenium()
@@ -126,9 +126,9 @@ if __name__ == '__main__':
             # 자동로그인 처리
             auto_login.login_hometax(driver, login_info, config.IS_DEBUG )
             # ------------------------------------------------------------------
-            logi("###########################################")
-            logi("담당자 전환: %s %s" % (user_id, user_name))
-            logi("###########################################")
+            logt("###########################################")
+            logt("담당자 전환: %s %s" % (user_id, user_name))
+            logt("###########################################")
             
             for job_idx in range(0, len(jobs)):
                 ht_info = jobs[job_idx]
@@ -145,9 +145,9 @@ if __name__ == '__main__':
                 # 담당자 홈택스로그인 가능 여부 확인용
                 dbjob.update_user_cookieModiDt(user_id)
 
-                logi("******************************************************************************************************************")
+                logt("******************************************************************************************************************")
                 logt("%s/%s : 양도인=%s, HT_TT_SEQ=%d" % (job_idx+1, len(jobs), ht_info['holder_nm'], ht_info['ht_tt_seq']))
-                logi("******************************************************************************************************************")
+                logt("******************************************************************************************************************")
 
                 #print(dbjob.select_HtTtFile_ByPk(ht_info['source_file_seq']))
 
@@ -230,7 +230,7 @@ if __name__ == '__main__':
         # end for [담당자순환]
 
 
-        logi(">>>>>>>>>> 반복순환 마무리 => 처음부터 다시 시작 <<<<<<<<<<<<< ") 
+        logt(">>>>>>>>>> 반복순환 마무리 => 처음부터 다시 시작 <<<<<<<<<<<<< ") 
         #time.sleep(300)            
         break;
         # Insert 테스트
@@ -242,6 +242,6 @@ if __name__ == '__main__':
         # 30 => D:\WWW\JNK_DEV\files\hometax\000\000030\
         #ht_file.get_dir_by_htTtSeq(30)
 
-logi("프로그램 종료")        
+logt("프로그램 종료")        
 exit(0)
 

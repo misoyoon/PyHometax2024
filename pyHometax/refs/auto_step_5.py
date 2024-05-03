@@ -102,9 +102,9 @@ def do_step5(driver, jobs, user_id):
         ht_tt_seq = ht_info['ht_tt_seq']
 
         try:
-            logi("####################################################")
-            logi("%d / %d 처리 ..." % (job_idx+1, len(jobs)))        
-            logi("####################################################")
+            logt("####################################################")
+            logt("%d / %d 처리 ..." % (job_idx+1, len(jobs)))        
+            logt("####################################################")
             ht_info = jobs[job_idx]
 
             if len(driver.window_handles) > 1:
@@ -150,7 +150,7 @@ def do_step5(driver, jobs, user_id):
         logt("####### 한건처리 완료 #######", 0.2)
 
         if 오류발생건수 >=10 :
-            logi(f"연속 오류 발생으로 프로그램을 종료합니다. 오류발생건수={오류발생건수}")
+            logt(f"연속 오류 발생으로 프로그램을 종료합니다. 오류발생건수={오류발생건수}")
             if driver:
                 driver.close
             sys.exit()
@@ -166,9 +166,9 @@ def do_step5_loop(driver, ht_info):
     ssn1 = ht_info['holder_ssn1']
     ssn2 = ht_info['holder_ssn2']
 
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     logt("양도인=%s, HT_TT_SEQ=%d, SSN= %s %s" % (ht_info['holder_nm'], ht_info['ht_tt_seq'], ssn1, ssn2))
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     
     # 기존 로그 삭제
     #dbjob.delete_auHistory_byKey(ht_tt_seq, au_step)
@@ -255,7 +255,7 @@ def do_step5_loop(driver, ht_info):
         #ht_tt_file_seq = ht_info['source_file_seq']
         source_file_path = ht_file.get_work_dir_by_htTtSeq(ht_tt_seq)
         source_file_path = source_file_path + 'source_upload.pdf'
-        logi(f"업로드파일 Path : {source_file_path}")
+        logt(f"업로드파일 Path : {source_file_path}")
 
         # 원본파일(tif, pdf 등) 이 없을 경우 에러처리
         if not os.path.isfile(source_file_path):
@@ -320,7 +320,7 @@ def do_step5_loop(driver, ht_info):
                 alert.accept()
                 첨부파일50메가_이상 = True
         except Exception as e:
-            logi(f"정상적인 except 발생")
+            logt(f"정상적인 except 발생")
 
         if 첨부파일50메가_이상:         
             raise BizException('첨부파일크기오류', "첨부파일 크기 50MB이상")

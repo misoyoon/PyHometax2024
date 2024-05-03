@@ -45,7 +45,7 @@ au_step = "6"
 for_one_user_name = ""
 for_one_user_id   = ""
 if len(sys.argv) == 1:
-    logi("실행할 담당자 정보가 없습니다.")
+    logt("실행할 담당자 정보가 없습니다.")
     exit()
 else :
     try:
@@ -58,9 +58,9 @@ else :
         exit()
 
 
-logi("###########################################")
-logi("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
-logi("###########################################")
+logt("###########################################")
+logt("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
+logt("###########################################")
 
 
 dbjob.set_global(group_id, None, None, None, au_step) 
@@ -72,13 +72,13 @@ if __name__ == '__main__':
     logt("홈택스 양도소득세 자동신고 서버 기동 !!!")
     logt("  ==> 신고5단계 : 홈택스 증빙자료 업로드")
 
-    logi("# ------------------------------------------------------------------")
-    logi("담당자 작업 정보 : ID=%s, Name=%s" % (for_one_user_id, for_one_user_name))
-    logi("# ------------------------------------------------------------------")
+    logt("# ------------------------------------------------------------------")
+    logt("담당자 작업 정보 : ID=%s, Name=%s" % (for_one_user_id, for_one_user_name))
+    logt("# ------------------------------------------------------------------")
 
     # 한번에 처리한 자료수
     batch_bundle_count = config.BATCH_BUNDLE_COUNT
-    logi("배치 처리 건수=%d" % batch_bundle_count)
+    logt("배치 처리 건수=%d" % batch_bundle_count)
 
 
     dbjob.set_global(group_id, None, for_one_user_id, None, au_step)    # (v_host_name, v_user_id, v_ht_tt_seq, v_au_step):
@@ -103,12 +103,12 @@ if __name__ == '__main__':
 
     # 5단계 홈택스 증빙자료 업로드
     jobs = dbjob.select_auto_5_check(for_one_user_id, batch_bundle_count)
-    logi("-------------------------------------------------------------")
-    logi("%s님의 이번 처리 건수=%d" % (for_one_user_name, len(jobs)))
+    logt("-------------------------------------------------------------")
+    logt("%s님의 이번 처리 건수=%d" % (for_one_user_name, len(jobs)))
     if len(jobs) == 0:
-        logi("처리할 자료가 없습니다.")
+        logt("처리할 자료가 없습니다.")
         exit()
-    logi("-------------------------------------------------------------")
+    logt("-------------------------------------------------------------")
 
     # 셀레니움 드라이버
     driver: WebDriver = auto_login.init_selenium()
@@ -119,10 +119,10 @@ if __name__ == '__main__':
     
 
     if len(jobs) == 0:
-        logi("작업할 리스트가 없습니다. 작업종료")    
+        logt("작업할 리스트가 없습니다. 작업종료")    
     else :
         try:
-            logi("처리건수= %d" % len(jobs))
+            logt("처리건수= %d" % len(jobs))
 
             check_5단계_업로드점검_loop.do_step5(driver, jobs, for_one_user_id)
         

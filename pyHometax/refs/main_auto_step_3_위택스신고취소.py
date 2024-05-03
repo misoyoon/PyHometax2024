@@ -72,9 +72,9 @@ if __name__ == '__main__':
     jobs = dbjob.select_auto_3_위택스_취소목록(group_id)
     
     if len(jobs) == 0:
-        logi("작업할 리스트가 없습니다. 작업종료")    
+        logt("작업할 리스트가 없습니다. 작업종료")    
     else:
-        logi(f"작업 수량={len(jobs)}")
+        logt(f"작업 수량={len(jobs)}")
     
     try:
         driver = auto_login.init_selenium()
@@ -144,7 +144,7 @@ if __name__ == '__main__':
                     driver.find_element(By.ID, 'taxSeq').send_keys(jobs[k]['hometax_reg_num_backup'])
                     time.sleep(0.3)
 
-                    logi(f"주민번호= {jobs[k]['holder_ssn1']}-{jobs[k]['holder_ssn2']}, 홈택스 접수번호= {jobs[k]['hometax_reg_num_backup']}")
+                    logt(f"주민번호= {jobs[k]['holder_ssn1']}-{jobs[k]['holder_ssn2']}, 홈택스 접수번호= {jobs[k]['hometax_reg_num_backup']}")
                     elements = driver.find_elements(By.CSS_SELECTOR, '.searchBtn')
                     #print(elements)
                     elements[0].click() # 첫번째 것을 조회버튼으로 인식

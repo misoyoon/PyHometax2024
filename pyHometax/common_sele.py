@@ -11,7 +11,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait as wait
-from selenium.webdriver.support.select import Select
 from selenium.common.exceptions import TimeoutException
 
 import pyautogui
@@ -33,22 +32,22 @@ def move_iframe(driver: WebDriver, target_iframe:str='txppIframe', sleep=0.5):
         iframe_id = iframe.get_attribute('id')
         if iframe_name == target_iframe or iframe_id == target_iframe:
             is_exist_iframe = True
-            logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                     <=== Selected")
+            logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                     <=== Selected")
         else:
-            logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
+            logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
 
     if is_exist_iframe == False:
         time.sleep(2)
-        logi(f"    IFRAME을 찾을 수 없어 다시 한번 시도합니다.")
+        logt(f"    IFRAME을 찾을 수 없어 다시 한번 시도합니다.")
         for iframe in iframes:
             frame_idx += 1
             iframe_name = iframe.get_attribute('name')
             iframe_id = iframe.get_attribute('id')
             if iframe_name == target_iframe or iframe_id == target_iframe:
                 is_exist_iframe = True
-                logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                 <=== Selected")
+                logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                 <=== Selected")
             else:
-                logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
+                logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
 
     try :
         if is_exist_iframe :
@@ -90,13 +89,13 @@ def change_window(driver: WebDriver, from_index: int, to_index: int):
 # Window 전환
 def print_window_by_title(driver: WebDriver, title=""):
     window_handles = driver.window_handles
-    logi(window_handles)
+    logt(window_handles)
     
     idx = -1
-    logi(f'윈도우 리스트')
+    logt(f'윈도우 리스트')
     for w_handle in window_handles:     
         idx += 1
-        logi(f'{idx} : {w_handle.title}')
+        logt(f'{idx} : {w_handle.title}')
 
 # Alert처리
 def click_alert(driver: WebDriver, msg, sleep=0.5) -> str:
@@ -191,15 +190,15 @@ def close_other_windows(driver: WebDriver):
 def pyautoui_image_click(img_path, retry_cnt=10):
     for retry in range(retry_cnt):
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.8)
-        logi(center)
-        logi(img_path)
+        logt(center)
+        logt(img_path)
         if center == None :
             time.sleep(0.5)
-            logi("이미지 클릭 재시도: retry=%d" % retry)
+            logt("이미지 클릭 재시도: retry=%d" % retry)
         else :
             time.sleep(0.3) # 0.3초후 클릭
             pyautogui.click(center)
-            logi("이미지 클릭: %s" % img_path)
+            logt("이미지 클릭: %s" % img_path)
             return True
     return False
 

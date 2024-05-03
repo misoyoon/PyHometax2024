@@ -32,22 +32,22 @@ def move_iframe(driver: WebDriver, target_iframe:str='txppIframe', sleep=0.5):
         iframe_id = iframe.get_attribute('id')
         if iframe_name == target_iframe or iframe_id == target_iframe:
             is_exist_iframe = True
-            logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                     <=== Selected")
+            logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                     <=== Selected")
         else:
-            logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
+            logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
 
     if is_exist_iframe == False:
         time.sleep(2)
-        logi(f"    IFRAME을 찾을 수 없어 다시 한번 시도합니다.")
+        logt(f"    IFRAME을 찾을 수 없어 다시 한번 시도합니다.")
         for iframe in iframes:
             frame_idx += 1
             iframe_name = iframe.get_attribute('name')
             iframe_id = iframe.get_attribute('id')
             if iframe_name == target_iframe or iframe_id == target_iframe:
                 is_exist_iframe = True
-                logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                 <=== Selected")
+                logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                 <=== Selected")
             else:
-                logi(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
+                logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
 
     try :
         if is_exist_iframe :

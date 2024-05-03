@@ -48,7 +48,7 @@ def main():
     
     logt("로그인 시간", 1)
     auto_login.login_guest(driver, login_info)
-    logi("로그인 완료")
+    logt("로그인 완료")
     
     
     # 팝업 창이 있으면 모두 닫기
@@ -132,7 +132,7 @@ def main():
     
         time.sleep(인증_확인_간격Sec)
         nTry += 1
-        logi(f"{nTry} 시도:  경과 시간 = {elapsed_time}")
+        logt(f"{nTry} 시도:  경과 시간 = {elapsed_time}")
         
         try:
             # 인증 완료 버튼 클릭
@@ -148,11 +148,11 @@ def main():
                 continue
         except NoSuchElementException:
             # 정상인 경우
-            logi('정상적으로 인증이 되었습니다(1).  ==> 다음단계 진행 (초기 페이지 이동)')
+            logt('정상적으로 인증이 되었습니다(1).  ==> 다음단계 진행 (초기 페이지 이동)')
             break
         except Exception as e:
             print (e)
-            logi('정상적으로 인증이 되었습니다(2).  ==> 다음단계 진행 (초기 페이지 이동)')
+            logt('정상적으로 인증이 되었습니다(2).  ==> 다음단계 진행 (초기 페이지 이동)')
             break
         
         
@@ -295,13 +295,13 @@ def fn_지급명세서_for_거주자사업소득지급명세서(driver: WebDrive
             # 다음 라인 읽기
             idx_start += 10
             
-            logi(f'{지급명세서_종류} 순번={row_num}: 지급총액_sum   = {지급총액_sum}')
-            logi(f'{지급명세서_종류} 순번={row_num}: 소득세_sum     = {소득세_sum}')
-            logi(f'{지급명세서_종류} 순번={row_num}: 지방소득세_sum = {지방소득세_sum}')
+            logt(f'{지급명세서_종류} 순번={row_num}: 지급총액_sum   = {지급총액_sum}')
+            logt(f'{지급명세서_종류} 순번={row_num}: 소득세_sum     = {소득세_sum}')
+            logt(f'{지급명세서_종류} 순번={row_num}: 지방소득세_sum = {지방소득세_sum}')
     
-        logi(f'{지급명세서_종류} 합계: 지급총액_sum   = {지급총액_sum}')
-        logi(f'{지급명세서_종류} 합계: 소득세_sum     = {소득세_sum}')
-        logi(f'{지급명세서_종류} 합계: 지방소득세_sum = {지방소득세_sum}')
+        logt(f'{지급명세서_종류} 합계: 지급총액_sum   = {지급총액_sum}')
+        logt(f'{지급명세서_종류} 합계: 소득세_sum     = {소득세_sum}')
+        logt(f'{지급명세서_종류} 합계: 지방소득세_sum = {지방소득세_sum}')
 
     # 오픈된 지급명세서 미리보기 창 닫기
     driver.close()
@@ -360,11 +360,11 @@ def fn_지급명세서_for_근로소득지급명세서(driver: WebDriver, 지급
         
         idx_합계 = 128
         지급총액 = tcells[idx_합계].get_attribute("aria-label").replace(",", "")   # 지급총액 idx = 128
-        logi(f'{지급명세서_종류} 순번={row_num}: 지급총액={지급총액}')
+        logt(f'{지급명세서_종류} 순번={row_num}: 지급총액={지급총액}')
         지급총액_sum += int(지급총액)
     
     # 오픈된 지급명세서 미리보기 창 닫기
-    logi(f'{지급명세서_종류} 합계: 지급총액 {지급총액_sum}')
+    logt(f'{지급명세서_종류} 합계: 지급총액 {지급총액_sum}')
     
     driver.close()
     return 지급총액_sum
@@ -385,5 +385,5 @@ def fn_지급명세서_for_기타(driver: WebDriver, 지급명세서_종류):
 if __name__ == '__main__':
     main()
     
-    logi("프로그램 종료")
+    logt("프로그램 종료")
     sys.exit()

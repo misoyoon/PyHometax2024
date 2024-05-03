@@ -59,7 +59,7 @@ def pyautoui_image_click(img_path):
 for_one_user_name = ""
 for_one_user_id   = ""
 if len(sys.argv) == 1:
-    logi("실행할 담당자 정보가 없습니다.")
+    logt("실행할 담당자 정보가 없습니다.")
     for_one_user_name = "관리자"
     for_one_user_id = config.USER_LIST[for_one_user_name]    
 else :
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     jobs = dbjob.select_auto_4(group_id, login_info['login_id'], config.BATCH_BUNDLE_COUNT)
     if len(jobs) == 0:
-        logi("작업할 리스트가 없습니다. 작업종료")    
+        logt("작업할 리스트가 없습니다. 작업종료")    
         sys.exit()
     try:
         driver = auto_login.init_selenium()
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                     driver.find_element(By.ID, 'taxSeq').send_keys(jobs[k]['hometax_reg_num'])
                     time.sleep(0.3)
 
-                    logi(f"주민번호= {jobs[k]['holder_ssn1']}-{jobs[k]['holder_ssn2']}, 홈택스 접수번호= {jobs[k]['hometax_reg_num']}")
+                    logt(f"주민번호= {jobs[k]['holder_ssn1']}-{jobs[k]['holder_ssn2']}, 홈택스 접수번호= {jobs[k]['hometax_reg_num']}")
                     elements = driver.find_elements(By.CSS_SELECTOR, '.searchBtn')
                     #print(elements)
                     elements[0].click() # 첫번째 것을 조회버튼으로 인식

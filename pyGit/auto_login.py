@@ -18,7 +18,7 @@ def init_selenium() -> WebDriver:
     '''
     cur_dir = os.getcwd()
     chromedriver_path =  cur_dir + os.sep + "chromedriver.exe" #resource_path("chromedriver.exe")
-    logi("크롬드라이버 위치=%s" % chromedriver_path)
+    logt("크롬드라이버 위치=%s" % chromedriver_path)
 
     # 1.크롬접속
     driver = webdriver.Chrome(chromedriver_path)

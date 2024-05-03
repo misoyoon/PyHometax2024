@@ -77,7 +77,7 @@ def do_step2(driver, jobs, user_id):
     # jobs = dbjob.select_auto_2(user_id, config.BATCH_BUNDLE_COUNT)
     
     if len(jobs) == 0:
-        logi("모든 자료를 다운로드 받았습니다. 작업종료")    
+        logt("모든 자료를 다운로드 받았습니다. 작업종료")    
 
     # 양도자 반복처리      
     error_cnt = 0  # 연속 에러갯수      
@@ -148,9 +148,9 @@ def do_step2_loop(driver, ht_info):
     cur_window_handle = driver.current_window_handle
     driver.switch_to.frame("txppIframe")
     
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     print("양도인= %s, HT_TT_SEQ= %d, SSN= %s%s" % (ht_info['holder_nm'], ht_info['ht_tt_seq'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     
     # 기존 로그 삭제
     dbjob.delete_auHistory_byKey(ht_tt_seq, "2")

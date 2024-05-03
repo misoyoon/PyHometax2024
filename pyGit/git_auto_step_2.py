@@ -31,10 +31,10 @@ def main():
     # #############################################################
     
     if len(git_infos) == 0:
-        logi("진행할 작업이 없습니다. 프로그램을 종료합니다.")
+        logt("진행할 작업이 없습니다. 프로그램을 종료합니다.")
         sys.exit()
     else:
-        logi(f"홈택스 종합소득세 파일다운로드 작업 ::: 총 실행 건수 = {len(git_infos)}")
+        logt(f"홈택스 종합소득세 파일다운로드 작업 ::: 총 실행 건수 = {len(git_infos)}")
         
         
     driver: WebDriver = auto_login.init_selenium()
@@ -44,17 +44,17 @@ def main():
     i = 0
     for git_info in git_infos:
         i += 1
-        logi(f">>>>>>> 현재 실행 위치 {i} / {len(git_infos)} <<<<<<<<")
-        logi(f"======= {git_info['git_seq']} =  {git_info['nm']}  {git_info['ssn1']}{git_info['ssn2']} :  {git_info['hometax_id']} / {git_info['hometax_pw']}")
+        logt(f">>>>>>> 현재 실행 위치 {i} / {len(git_infos)} <<<<<<<<")
+        logt(f"======= {git_info['git_seq']} =  {git_info['nm']}  {git_info['ssn1']}{git_info['ssn2']} :  {git_info['hometax_id']} / {git_info['hometax_pw']}")
 
         git_seq = git_info['git_seq']
         
-        logi("홈텍스 메인페이지 이동")
+        logt("홈텍스 메인페이지 이동")
         driver.get("https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml")
         driver.implicitly_wait(10)
 
         if git_info['hometax_id_confirm'] != 'Y':
-            logi("이전에 로그인에 실패하였습니다.  홈택스ID/PWD를 확인 후 다시 시도하세요")
+            logt("이전에 로그인에 실패하였습니다.  홈택스ID/PWD를 확인 후 다시 시도하세요")
             
         
         # 자동로그인 처리
@@ -148,7 +148,7 @@ def login_guest(driver, git_info):
         if alert_msg.find("비밀번호가") >= 0  :   # 비밀번호가 [3]회 잘못 입력되었습니다
             dbjob.update_git_hometaxIdConfirm(group_id, git_seq, 'N')
             alert.accept()
-            logi("비밀번호 오류로 다음 차례 진행 ~~~~~~~~")
+            logt("비밀번호 오류로 다음 차례 진행 ~~~~~~~~")
             retVal = False
 
     except Exception as e:
@@ -194,9 +194,9 @@ def download_file(driver:WebDriver, git_info, attach_type):
     base_dir = git_file.get_dir_by_gitSeq(git_seq, True)  # True => 폴더 생성
     filename = f"down{attach_type}.pdf" #git_file.get_file_name_by_type(attach_type)
     fullpath = base_dir + filename
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
     logt("파일다운로드: attach_type=%s, Filepath=%s" % (attach_type, fullpath))
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
 
     # 이미지 리소스 폴더
     resource_dir = os.path.dirname(os.path.abspath(__file__))  #os.path.dirname(sys.modules['__main__'].__file__)
@@ -241,12 +241,12 @@ def download_file(driver:WebDriver, git_info, attach_type):
         ans = pyautoui_image_click(btn_print_path)
         if ans == False:
             # 상단 프린터A 누르기
-            logi("상단 프린터A 누르기 (재시도)")
+            logt("상단 프린터A 누르기 (재시도)")
             pyautoui_image_click(img_print_path)
             time.sleep(0.5)
             ans = pyautoui_image_click(btn_print_path)
             if ans == False:
-                logi("회색 인쇄버튼 클릭 실패(재시도)")
+                logt("회색 인쇄버튼 클릭 실패(재시도)")
                 time.sleep(1000000)
 
 
@@ -265,7 +265,7 @@ def download_file(driver:WebDriver, git_info, attach_type):
     pyautoui_image_click(img_save_path)
 
     # 다운로드 팝업창 뜨기 => 여기도 경우에 따라 시간이 좀 걸림
-    logi(f"다운로드 팝업창 뜨기 : attach_type = {attach_type}")
+    logt(f"다운로드 팝업창 뜨기 : attach_type = {attach_type}")
     
     # if not attach_type == "1":
     #     logt("단순대기", 10.0)
@@ -281,7 +281,7 @@ def download_file(driver:WebDriver, git_info, attach_type):
             raise BizException("[다른이름으로 저장하기] 노출오류")
         
         
-        logi(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
+        logt(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
         pyautogui.typewrite(fullpath)
         time.sleep(0.5)
         pyautogui.press('enter')   # 저장하기 위해 파일경로 넣고 엔터치기
@@ -305,8 +305,8 @@ def download_file(driver:WebDriver, git_info, attach_type):
             dbjob.update_git_au_x(group_id, git_seq, AU_X, 'E', 'file size is not found')
 
     except Exception as e:
-        logi(e)
-        logi("오류로 프로그램 종료대기 600초")
+        logt(e)
+        logt("오류로 프로그램 종료대기 600초")
         time.sleep(600)
 
 
@@ -319,12 +319,12 @@ def pyautoui_image_click(img_path):
     for retry in range(6):
         # confidence인식 못하는 오류 : pip install opencv-python
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.7)
-        logi(f'pyautoui_image_click() : filepath={img_path}, center={center}')
+        logt(f'pyautoui_image_click() : filepath={img_path}, center={center}')
 
         if center == None :
             pyautogui.moveTo(10,10)  # 일부러 마우스 움직이기
             time.sleep(0.5)
-            logi(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
+            logt(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
         else :
             time.sleep(0.3) # 0.3초후 클릭
             pyautogui.click(center)
@@ -342,7 +342,7 @@ def pyautoui_image_wait(img_path, retry_num=10):
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.7)
 
         if center == None :
-            logi(f"이미지 클릭 재시도: {img_path} : retry={retry}")
+            logt(f"이미지 클릭 재시도: {img_path} : retry={retry}")
         else :
             logt(f"이미지 영역 찾기 완료 : {img_path}, center={center}")
             return True
@@ -359,9 +359,9 @@ def do_step2(driver: WebDriver, git_info):
     default_window_handle = driver.current_window_handle
     
     ssn  = f"{git_info['ssn1']}{git_info['ssn2']}"
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     logt("양도인= %s, git_seq= %d, SSN= %s%s" % (git_info['nm'], git_info['git_seq'], git_info['ssn1'], git_info['ssn2']))
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     
 
     # ssn = git_info['ssn1'] + git_info['ssn2']
@@ -375,7 +375,7 @@ def do_step2(driver: WebDriver, git_info):
     driver.find_element(By.ID, 'trigger70_UTERNAAZ31').click()
 
     alt_msg = sc.click_alert(driver, "조회가 완료되었습니다.")
-    logi("Alter Message Return=%s" % alt_msg)
+    logt("Alter Message Return=%s" % alt_msg)
     # 결과가 없을 경우 처리
     if alt_msg.find("사업자등록번호") > -1 :
         logt("조회결과 없음, 주민번호: %s" % ssn)
@@ -416,7 +416,7 @@ def do_step2(driver: WebDriver, git_info):
 
         # 신청_홈택스_이름차이_목록 = ["이해룡", "함경님"]
         # if not git_info['nm'] in 신청_홈택스_이름차이_목록:
-        logi("양도인명 확인 DB값= %s, Hometax= %s" % (git_info['nm'], hometax_nm))
+        logt("양도인명 확인 DB값= %s, Hometax= %s" % (git_info['nm'], hometax_nm))
         #     if hometax_nm != git_info['nm']:
         #         raise BizException("양도인명 불일치", "홈택스 양도인명= %s" % hometax_nm)
 
@@ -427,9 +427,9 @@ def do_step2(driver: WebDriver, git_info):
         dbjob.update_git_hometaxRegNum(git_seq, hometax_reg_num)
 
         try:
-            logi('# -----------------------------------------------------------------')
-            logi('#                        1) 납부계산서                             ')
-            logi('# -----------------------------------------------------------------')
+            logt('# -----------------------------------------------------------------')
+            logt('#                        1) 납부계산서                             ')
+            logt('# -----------------------------------------------------------------')
 
             ele_s = driver.find_elements(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(9+offset)+ " > span > a")
             ele_s[0].click()
@@ -440,7 +440,7 @@ def do_step2(driver: WebDriver, git_info):
             
             if len(window_handles) < 3:  # 윈도우가 모두 뜨지 않았을 경우 대기
                 for x in range(15):
-                    logi(f"윈도우 수량이 3개가 될때까지 대기, 현재 윈도우 갯수 = {len(window_handles)}")
+                    logt(f"윈도우 수량이 3개가 될때까지 대기, 현재 윈도우 갯수 = {len(window_handles)}")
                     time.sleep(1)
                     window_handles = driver.window_handles
                     if len(window_handles) == 3:
@@ -458,7 +458,7 @@ def do_step2(driver: WebDriver, git_info):
                     logt("팝업 윈도우 타이틀 확인 #2 (닫아야 할 윈도우) : title= %s" % driver.title)
                     driver.close()
                 except Exception as e:
-                    logi("window_handles[2] 윈도우 close실패 <-- 정상")
+                    logt("window_handles[2] 윈도우 close실패 <-- 정상")
 
                 driver.switch_to.window(window_handles[1])
                 logt("팝업 윈도우 타이틀 확인 #3 (작업 윈도우 복귀) : title= %s" % driver.title)
@@ -498,9 +498,9 @@ def do_step2(driver: WebDriver, git_info):
         # -----------------------------------------------------------------
         # 접수증 (홈택스)
         # -----------------------------------------------------------------
-        logi('# -----------------------------------------------------------------')
-        logi('#                        2) 접수증                                 ')
-        logi('# -----------------------------------------------------------------')
+        logt('# -----------------------------------------------------------------')
+        logt('#                        2) 접수증                                 ')
+        logt('# -----------------------------------------------------------------')
 
         try:
             logt("접수증 [보기] 클릭", 1)
@@ -508,19 +508,19 @@ def do_step2(driver: WebDriver, git_info):
             
             logt("윈도우 로딩 대기", 1)
             window_handles = driver.window_handles
-            logi(f"윈도우 갯수= {len(window_handles)}") 
+            logt(f"윈도우 갯수= {len(window_handles)}") 
             if len(window_handles) == 1:
                 logt("접수증 [보기] 클릭(재시도)", 0.1)
                 driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(11+offset)+ " > span > button").click()
 
-                logi("윈도우 전환 재시도", 2) 
+                logt("윈도우 전환 재시도", 2) 
                 window_handles = driver.window_handles
                 if len(window_handles) == 1:
-                    logi("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
+                    logt("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
                     raise BizException("[접수증] 윈도우 전환 실패 - {e}")
             
             # 정상 진행
-            logi(f"윈도우 갯수= {len(window_handles)}") 
+            logt(f"윈도우 갯수= {len(window_handles)}") 
             driver.switch_to.window(window_handles[1])
             driver.set_window_position(0,0)
             driver.set_window_size(850, 860)
@@ -543,9 +543,9 @@ def do_step2(driver: WebDriver, git_info):
         logt("작업프레임 이동: txppIframe", 0.5)
         driver.switch_to.frame("txppIframe")              
 
-        logi('# -----------------------------------------------------------------')
-        logi('#                        3) 납부서                                 ')
-        logi('# -----------------------------------------------------------------')
+        logt('# -----------------------------------------------------------------')
+        logt('#                        3) 납부서                                 ')
+        logt('# -----------------------------------------------------------------')
 
 
         # 주의) 납부서가 없을 수 있음
@@ -555,24 +555,24 @@ def do_step2(driver: WebDriver, git_info):
         try:
             alert = driver.switch_to.alert
             if alert.text.find("개인지방소득세를 별도 신고해야 합니다") >= 0:
-                logi("Alert Text = " + alert.text)
+                logt("Alert Text = " + alert.text)
                 alert.accept()
             else:
                 raise BizException("Alert 오류1", f"{e}")
         except Exception as e:                
-            logi(f"{e}")
+            logt(f"{e}")
 
         try :
             time.sleep(0.2)
             alert = driver.switch_to.alert
             if alert.text.find("종합소득세 납부할금액이 없습니다") >= 0:
-                logi("Alert Text = " + alert.text)
+                logt("Alert Text = " + alert.text)
                 alert.accept()
                 
                 time.sleep(0.2)
                 alert = driver.switch_to.alert
                 if alert.text.find("지금 개인지방소득세 신고하기로 이동하시려면") >= 0:
-                    logi("Alert Text (dismiss) = " + alert.text)
+                    logt("Alert Text (dismiss) = " + alert.text)
                     alert.dismiss()
                 
             else:
@@ -606,10 +606,10 @@ def do_step2(driver: WebDriver, git_info):
                     logt("납부서 클릭(재시도)", 0.1)
                     driver.find_element(By.CSS_SELECTOR, "#ttirnal111DVOListDes_cell_0_3 > img").click()
 
-                    logi("윈도우 전환 재시도", 2) 
+                    logt("윈도우 전환 재시도", 2) 
                     window_handles = driver.window_handles
                     if len(window_handles) == 1:
-                        logi("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
+                        logt("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
                         raise BizException("[납부서] 윈도우 전환 실패 - {e}")
                     else:
                         driver.switch_to.window(window_handles[1])
@@ -617,7 +617,7 @@ def do_step2(driver: WebDriver, git_info):
                         driver.set_window_size(810, 880)
 
                 # 정상진행
-                logi(f"윈도우 갯수= {len(window_handles)}") 
+                logt(f"윈도우 갯수= {len(window_handles)}") 
                 driver.switch_to.window(window_handles[1])
                 driver.set_window_position(0,0)
                 driver.set_window_size(810, 880)
@@ -627,7 +627,7 @@ def do_step2(driver: WebDriver, git_info):
                 download_file(driver, git_info, file_type)
 
         
-                logi(f"팝업윈도우 닫고 => 메인윈도우 전환")     
+                logt(f"팝업윈도우 닫고 => 메인윈도우 전환")     
                 driver.close()                
                 
                 # 원래 조회 윈도우로
@@ -650,7 +650,7 @@ def do_step2(driver: WebDriver, git_info):
                     time.sleep(0.2)
                     alert = driver.switch_to.alert
                     if alert.text.find("지금 개인지방소득세 신고하기로") >= 0:
-                        logi("Alert Text (dismiss) = " + alert.text)
+                        logt("Alert Text (dismiss) = " + alert.text)
                         alert.dismiss()
                     else:
                         raise BizException("Alert 오류4")

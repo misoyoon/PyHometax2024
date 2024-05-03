@@ -36,7 +36,7 @@ au_stpe = 2
 
 # def delete_old_file(ht_tt_seq):
 #     # file_type별 파일이름 결정
-#     logi("이전 파일 삭제 ---------")
+#     logt("이전 파일 삭제 ---------")
 #     dir_work = ht_file.get_dir_by_htTtSeq(ht_tt_seq)
 #     del_files = [
 #           "down1.pdf", "down2.pdf", "down3.pdf", "down4.pdf", "down8.pdf"
@@ -46,7 +46,7 @@ au_stpe = 2
 #     for f in del_files:
 #         fullpath = dir_work + f
 #         if os.path.isfile(fullpath):
-#             logi("이전 파일 삭제 : %s" % fullpath)
+#             logt("이전 파일 삭제 : %s" % fullpath)
 #             os.remove(fullpath)
 
 # Step 1. 세금신고 : 기본정보(양도인)
@@ -68,7 +68,7 @@ def do_step2(driver: WebDriver, group_id, jobs, user_id):
     driver.find_element(By.ID, 'tabControl1_UTERNAAZ11_tab_tabs2_UTERNAAZ11').click()
 
     if len(jobs) == 0:
-        logi("처리할 작업이 없습니다.. 작업종료")    
+        logt("처리할 작업이 없습니다.. 작업종료")    
 
     # 양도자 반복처리      
     error_cnt = 0  # 연속 에러갯수      
@@ -123,7 +123,7 @@ def do_step2(driver: WebDriver, group_id, jobs, user_id):
         
         except BizException as e:
             logt("#################### except BizException")
-            logi(e)
+            logt(e)
             if e.name == '미제출':  # 미제출건으로 해당 작업과는 무관하게 처리
                 dbjob.update_HtTt_AuX(au_stpe, ht_tt_seq, None, None)
 
@@ -148,7 +148,7 @@ def do_step2(driver: WebDriver, group_id, jobs, user_id):
             except:
                 pass
 
-            logi(e)
+            logt(e)
             dbjob.update_HtTt_AuX(au_stpe, ht_tt_seq, 'E', f'{e}')
             traceback.print_exc()
             error_cnt += 1
@@ -175,9 +175,9 @@ def file_download(ht_info, v_file_type):
     # file_type별 파일이름 결정
     dir_work = ht_file.get_dir_by_htTtSeq(ht_tt_seq, True)  # True => 폴더 생성
     fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
     logt("파일다운로드: Type: %s, Filepath: %s" % (v_file_type, fullpath))
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
 
     # 작업폴더
     project_dir = os.path.dirname(sys.modules['__main__'].__file__)
@@ -239,12 +239,12 @@ def file_download(ht_info, v_file_type):
         ans = pyautoui_image_click(btn_print_path)
         if ans == False:
             # 상단 프린터A 누르기
-            logi("상단 프린터A 누르기 (재시도)")
+            logt("상단 프린터A 누르기 (재시도)")
             pyautoui_image_click(img_print_path)
             time.sleep(0.5)
             ans = pyautoui_image_click(btn_print_path)
             if ans == False:
-                logi("회색 인쇄버튼 클릭 실패(재시도)")
+                logt("회색 인쇄버튼 클릭 실패(재시도)")
                 time.sleep(1000000)
 
 
@@ -259,14 +259,14 @@ def file_download(ht_info, v_file_type):
     pyautoui_image_click(img_save_path)
 
     # 다운로드 팝업창 뜨기 => 여기도 경우에 따라 시간이 좀 걸림
-    logi(f"다운로드 팝업창 뜨기 = {v_file_type}")
+    logt(f"다운로드 팝업창 뜨기 = {v_file_type}")
     time.sleep(3)
 
     # 파일 저장
     #pyperclip.copy(fullpath)
     #pyautogui.hotkey("ctrl", "v")
     try:
-        logi(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
+        logt(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
         pyautogui.typewrite(fullpath)  # 한글경로 오류니 조심하기(영문 패스만 사용할 것)
         time.sleep(0.2)
         pyautogui.press('enter')   # 저장하기 위해 파일경로 넣고 엔터치기
@@ -291,8 +291,8 @@ def file_download(ht_info, v_file_type):
                 return False
 
     except Exception as e:
-        logi(e)
-        logi("오류로 프로그램 종료대기 600초")
+        logt(e)
+        logt("오류로 프로그램 종료대기 600초")
         time.sleep(600)
 
 
@@ -305,11 +305,11 @@ def pyautoui_image_click(img_path):
     for retry in range(6):
         # confidence인식 못하는 오류 : pip install opencv-python
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.7)
-        logi(f'pyautoui_image_click() : filepath={img_path}, center={center}')
+        logt(f'pyautoui_image_click() : filepath={img_path}, center={center}')
 
         if center == None :
             time.sleep(0.5)
-            logi(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
+            logt(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
         else :
             time.sleep(0.3) # 0.3초후 클릭
             pyautogui.click(center)
@@ -327,11 +327,11 @@ def pyautoui_image_click(img_path):
 def pyautoui_image_wait(img_path):
     for retry in range(10):
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.5)
-        #logi(center)
+        #logt(center)
 
         if center == None :
             time.sleep(0.5)
-            logi(f"이미지 클릭 재시도: {img_path} : retry={retry}")
+            logt(f"이미지 클릭 재시도: {img_path} : retry={retry}")
         else :
             logt(f"이미지 영역 찾기 완료 : {img_path}")
             return True
@@ -345,9 +345,9 @@ def do_step2_loop(driver: WebDriver, ht_info):
     cur_window_handle = driver.current_window_handle
     driver.switch_to.frame("txppIframe")
     
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     logt("양도인= %s, HT_TT_SEQ= %d, SSN= %s%s" % (ht_info['holder_nm'], ht_info['ht_tt_seq'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     
     # 기존 로그 삭제
     dbjob.delete_auHistory_byKey(ht_tt_seq, "2")
@@ -377,7 +377,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
     driver.find_element(By.ID, 'trigger70_UTERNAAZ31').click()
 
     alt_msg = sc.click_alert(driver, "조회가 완료되었습니다.")
-    logi("Alter Message Return=%s" % alt_msg)
+    logt("Alter Message Return=%s" % alt_msg)
     # 결과가 없을 경우 처리
     if alt_msg.find("사업자등록번호") > -1 :
         logt("조회결과 없음, 주민번호: %s" % ssn)
@@ -418,7 +418,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
 
         # 신청_홈택스_이름차이_목록 = ["이해룡", "함경님"]
         # if not ht_info['holder_nm'] in 신청_홈택스_이름차이_목록:
-        logi("양도인명 확인 JNK= %s, Hometax= %s" % (ht_info['holder_nm'], hometax_holder_nm))
+        logt("양도인명 확인 JNK= %s, Hometax= %s" % (ht_info['holder_nm'], hometax_holder_nm))
         #     if hometax_holder_nm != ht_info['holder_nm']:
         #         raise BizException("양도인명 불일치", "홈택스 양도인명= %s" % hometax_holder_nm)
 
@@ -429,9 +429,9 @@ def do_step2_loop(driver: WebDriver, ht_info):
         dbjob.update_HtTt_hometaxRegNum(ht_tt_seq, hometax_reg_num)
 
         try:
-            logi('# -----------------------------------------------------------------')
-            logi('#                        1) 납부계산서                             ')
-            logi('# -----------------------------------------------------------------')
+            logt('# -----------------------------------------------------------------')
+            logt('#                        1) 납부계산서                             ')
+            logt('# -----------------------------------------------------------------')
 
             ele_s = driver.find_elements(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(9+offset)+ " > span > a")
             ele_s[0].click()
@@ -442,7 +442,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
             
             if len(window_handles) < 3:  # 윈도우가 모두 뜨지 않았을 경우 대기
                 for x in range(15):
-                    logi(f"윈도우 수량이 3개가 될때까지 대기, 현재 윈도우 갯수 = {len(window_handles)}")
+                    logt(f"윈도우 수량이 3개가 될때까지 대기, 현재 윈도우 갯수 = {len(window_handles)}")
                     time.sleep(1)
                     window_handles = driver.window_handles
                     if len(window_handles) == 3:
@@ -473,7 +473,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
                     driver.switch_to.window(driver.window_handles[1])
 
                 except Exception as e:
-                    logi("window_handles[2] 윈도우 close실패 <-- 정상")
+                    logt("window_handles[2] 윈도우 close실패 <-- 정상")
 
                 driver.switch_to.window(window_handles[1])
                 logt("팝업 윈도우 타이틀 확인 #3 (작업 윈도우 복귀) : title= %s" % driver.title)
@@ -509,9 +509,9 @@ def do_step2_loop(driver: WebDriver, ht_info):
             # -----------------------------------------------------------------
             # 계산명세서 (신고서 보기 팝업에 함께 존재 -> 링크로 눌러 선택하기)
             # -----------------------------------------------------------------
-            logi('# -----------------------------------------------------------------')
-            logi('#                        2) 계산명세서                             ')
-            logi('# -----------------------------------------------------------------')
+            logt('# -----------------------------------------------------------------')
+            logt('#                        2) 계산명세서                             ')
+            logt('# -----------------------------------------------------------------')
 
 
             logt("클릭: 계산명세서 선택", 0.5)
@@ -538,9 +538,9 @@ def do_step2_loop(driver: WebDriver, ht_info):
         # -----------------------------------------------------------------
         # 접수증 (홈택스)
         # -----------------------------------------------------------------
-        logi('# -----------------------------------------------------------------')
-        logi('#                        3) 접수증                                 ')
-        logi('# -----------------------------------------------------------------')
+        logt('# -----------------------------------------------------------------')
+        logt('#                        3) 접수증                                 ')
+        logt('# -----------------------------------------------------------------')
 
         try:
             logt("접수증 [보기] 클릭", 1)
@@ -548,19 +548,19 @@ def do_step2_loop(driver: WebDriver, ht_info):
             
             logt("윈도우 로딩 대기", 1)
             window_handles = driver.window_handles
-            logi(f"윈도우 갯수= {len(window_handles)}") 
+            logt(f"윈도우 갯수= {len(window_handles)}") 
             if len(window_handles) == 1:
                 logt("접수증 [보기] 클릭(재시도)", 0.1)
                 driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(11+offset)+ " > span > button").click()
 
-                logi("윈도우 전환 재시도", 2) 
+                logt("윈도우 전환 재시도", 2) 
                 window_handles = driver.window_handles
                 if len(window_handles) == 1:
-                    logi("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
+                    logt("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
                     raise BizException("[접수증] 윈도우 전환 실패 - {e}")
             
             # 정상 진행
-            logi(f"윈도우 갯수= {len(window_handles)}") 
+            logt(f"윈도우 갯수= {len(window_handles)}") 
             driver.switch_to.window(window_handles[1])
             driver.set_window_position(0,0)
             driver.set_window_size(850, 860)
@@ -578,9 +578,9 @@ def do_step2_loop(driver: WebDriver, ht_info):
         # -----------------------------------------------------------------
         # 납부서
         # -----------------------------------------------------------------
-        logi('# -----------------------------------------------------------------')
-        logi('#                        4) 납부서                                 ')
-        logi('# -----------------------------------------------------------------')
+        logt('# -----------------------------------------------------------------')
+        logt('#                        4) 납부서                                 ')
+        logt('# -----------------------------------------------------------------')
 
         logt("작업프레임 이동: txppIframe", 0.5)
         driver.switch_to.frame("txppIframe")
@@ -624,10 +624,10 @@ def do_step2_loop(driver: WebDriver, ht_info):
                 logt("납부서 클릭(재시도)", 0.1)
                 driver.find_element(By.CSS_SELECTOR, "#ttirnal111DVOListDes_cell_0_3 > img").click()
 
-                logi("윈도우 전환 재시도", 2) 
+                logt("윈도우 전환 재시도", 2) 
                 window_handles = driver.window_handles
                 if len(window_handles) == 1:
-                    logi("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
+                    logt("윈도우 전환 실패 => 재시도 :윈도우 갯수={len(window_handles)}") 
                     raise BizException("[납부서] 윈도우 전환 실패 - {e}")
                 else:
                     driver.switch_to.window(window_handles[1])
@@ -635,7 +635,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
                     driver.set_window_size(810, 880)
 
             # 정상진행
-            logi(f"윈도우 갯수= {len(window_handles)}") 
+            logt(f"윈도우 갯수= {len(window_handles)}") 
             driver.switch_to.window(window_handles[1])
             driver.set_window_position(0,0)
             driver.set_window_size(810, 880)
@@ -647,7 +647,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
         file_download(ht_info, file_type)
 
 
-        logi(f"팝업윈도우 닫고 => 메인윈도우 전환")     
+        logt(f"팝업윈도우 닫고 => 메인윈도우 전환")     
         driver.close()
         driver.switch_to.window(cur_window_handle)
         
@@ -658,7 +658,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
 
         # 납부서 2 (분납이 있는 경우) -------------------------------------------
         납부서갯수 = len(driver.find_elements(By.CSS_SELECTOR, "#ttirnal111DVOListDes_body_tbody > tr"))
-        logi(f"납부서 갯수 = {납부서갯수}") 
+        logt(f"납부서 갯수 = {납부서갯수}") 
         if 납부서갯수 == 2:
             try :
                 logt("납부서2(분납) 이미지 클릭", 0.5)
@@ -677,7 +677,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
                 file_type = "HT_DOWN_8"
                 file_download(ht_info, file_type)
 
-                logi(f"팝업윈도우 닫고 => 메인윈도우 전환")     
+                logt(f"팝업윈도우 닫고 => 메인윈도우 전환")     
                 driver.close()
                 driver.switch_to.window(cur_window_handle)
                 logt("윈도우 갯수= %d" % len(window_handles)) 
@@ -692,19 +692,19 @@ def do_step2_loop(driver: WebDriver, ht_info):
                     분납금2 = driver.find_element(By.CSS_SELECTOR, "#ttirnal111DVOListDes_cell_1_1 > span").text
                     분납금1 = int(분납금1.strip().replace(',', ''))
                     분납금2 = int(분납금2.strip().replace(',', ''))
-                    logi(f"반자동 분납금 업데이트 : 분납1={분납금1}, 분납2={분납금2}")
+                    logt(f"반자동 분납금 업데이트 : 분납1={분납금1}, 분납2={분납금2}")
                     dbjob.update_HtTt_installment(ht_tt_seq, 분납금1, 분납금2)
                     dbjob.update_HtTt_hometaxIncomeTax(ht_tt_seq, 분납금1 + 분납금2)
 
             except Exception as e:
                 raise BizException("납분서(분납)", f"{e}")
         else:
-            logi("납부서(분납) 없음 => 정상")
+            logt("납부서(분납) 없음 => 정상")
             if ht_info['data_type'] == 'SEMI':
                 분납금1 = driver.find_element(By.CSS_SELECTOR, "#ttirnal111DVOListDes_cell_0_1 > span").text
                 분납금1 = int(분납금1.strip().replace(',', ''))
                 분납금2 = 0
-                logi(f"반자동 분납금 업데이트 : 분납1={분납금1}, 분납2={분납금2}")
+                logt(f"반자동 분납금 업데이트 : 분납1={분납금1}, 분납2={분납금2}")
                 dbjob.update_HtTt_hometaxIncomeTax(ht_tt_seq, 분납금1 + 분납금2)
 
         # ---------------------------------------------------------------------------
@@ -724,7 +724,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
 
         #logt("작업프레임 이동: txppIframe", 0.5)
         #driver.switch_to.frame("txppIframe")
-        #logi(driver.window_handles)
+        #logt(driver.window_handles)
 
 
     else :

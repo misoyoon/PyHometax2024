@@ -40,17 +40,17 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         
         # driver 확인
         if sc.check_availabe_driver(driver) == False:
-            logi("driver가 close 된 것으로 판단 ==> 작업 중지")
+            logt("driver가 close 된 것으로 판단 ==> 작업 중지")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S')
             return
         
         try:
             로그인연장 = driver.find_element(By.CSS_SELECTOR, "#header > div.header-menu > div > div.login-time > button").text 
             if 로그인연장 != '로그인연장':
-                logi("로그인 확인 불가로 재실행 필요 ==> 작업 중지")
+                logt("로그인 확인 불가로 재실행 필요 ==> 작업 중지")
                 return # 단순하게 재로그인 처리를 위해 다시 시도하기
         except:
-            logi("로그인 확인 불가로 재실행 필요 ==> 작업 중지")
+            logt("로그인 확인 불가로 재실행 필요 ==> 작업 중지")
             return # 단순하게 재로그인 처리를 위해 다시 시도하기
             
         
@@ -72,12 +72,12 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 # AUTO_MANGER: RUN
                 dbjob.update_autoManager_statusCd(auto_manager_id, 'R')
             elif status_cd == 'SW' or status_cd == 'S':                 
-                logi(f'Agent Check : Status={status_cd} ==> 작업 중지') 
+                logt(f'Agent Check : Status={status_cd} ==> 작업 중지') 
                 if status_cd == 'SW':
                     dbjob.update_autoManager_statusCd(auto_manager_id, 'S')
                 return
         else:
-            logi("verify_stamp 변경으로 STOP 합니다.")
+            logt("verify_stamp 변경으로 STOP 합니다.")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
             
                             
@@ -85,7 +85,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         ht_info = dbjob.select_next_au3(group_id, worker_id, seq_where_start, seq_where_end)
 
         if not ht_info:
-            logi("처리할 자료가 없어서 FINISH 합니다. ==> 작업 중지")
+            logt("처리할 자료가 없어서 FINISH 합니다. ==> 작업 중지")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'F', '처리할 자료가 없어서 FINISH 합니다.')
             return
 
@@ -107,9 +107,9 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         if au_x == '1' or au_x == '2' or au_x == '5' :
             dbjob.update_user_cookieModiDt(worker_id)        
 
-        logi("******************************************************************************************************************")
-        logt("JOB_COUNT=%s : 양도인=%s, HT_TT_SEQ=%d" % (job_cnt, ht_info['holder_nm'], ht_info['ht_tt_seq']))
-        logi("******************************************************************************************************************")
+        logt("******************************************************************************************************************")
+        logt("3단계 : JOB_COUNT=%s : HT_TT_SEQ=%d, 양도인=%s, SSN=%s-%s" % (job_cnt, ht_info['ht_tt_seq'], ht_info['holder_nm'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
+        logt("******************************************************************************************************************")
 
         try:
             # 양도소득분 신고
@@ -130,11 +130,11 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         
             # TODO 사전계발시 임시코드
             # (예정신고)신고서 작성하기
-            driver.find_element(By.CSS_SELECTOR, '#btnPreDclr > span').click()
+            #driver.find_element(By.CSS_SELECTOR, '#btnPreDclr > span').click()
             # (확정신고)신고서 작성하기 # TODO 필수주석풀기
-            #driver.find_element(By.CSS_SELECTOR, '#btnFinalDclr > span').click()
+            driver.find_element(By.CSS_SELECTOR, '#btnFinalDclr > span').click()
 
-            다음버튼_대기시간 = 1.3
+            다음버튼_대기시간 = 1.5
             # ------------------------------------------------
             logt("##### 1.신고인", 다음버튼_대기시간)
             # ------------------------------------------------
@@ -149,18 +149,35 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             except:
                 pass
             
+
+            for i in range(10):
+                try:
+                    신고인 = driver.find_element(By.CSS_SELECTOR, '#dclrRlpNm').text
+                    if 신고인 == '세무법인 더원':
+                        break
+                except:
+                    logt("신고인 정보 노출 대기 중...")
+                time.sleep(1)
             
             # 납세자 조회
             logt("[납세자 조회] 클릭", 0.5)
             driver.find_element(By.CSS_SELECTOR, '#btnDlgp').click()
             
             # ----------------------
-            # IFRAME 시작
+            # IFRAME 시작  : 위임자 조회
             # ----------------------
             # 프레임 전환
-            logt("프레임 전환", 0.5)
+            logt("프레임 전환", 2)
             driver.switch_to.frame(0)
             
+            # 검색결과가 0보다 클때까지 대기 (여기서 오래 걸리는 경우가 있음)
+            for i in range(10):
+                검색결과수 = driver.find_element(By.ID, "spnTotCnt").text
+                logt(f"위임자목록 조회 결과 = {검색결과수}")
+                if int(검색결과수) > 0: break
+                time.sleep(0.5)
+
+
             logt("[주민번호 입력 대기]", 0.5)
             driver.find_element(By.CSS_SELECTOR, '#condDlgpNoEnc1').clear()
             driver.find_element(By.CSS_SELECTOR, '#condDlgpNoEnc1').send_keys(ht_info['holder_ssn1'])
@@ -168,7 +185,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             driver.find_element(By.CSS_SELECTOR, '#condDlgpNoEnc2').clear()
             driver.find_element(By.CSS_SELECTOR, '#condDlgpNoEnc2').send_keys(ht_info['holder_ssn2'])
             time.sleep(0.1)
-            logi(f"[주민번호 입력 : {ht_info['holder_ssn1']}-{ht_info['holder_ssn2']}]")
+            logt(f"[주민번호 입력 : {ht_info['holder_ssn1']}-{ht_info['holder_ssn2']}]")
             
             # 검색 버튼 클릭
             driver.find_element(By.CSS_SELECTOR, '#btnDlgpSearch').click()
@@ -178,11 +195,11 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             검색결과건수 = driver.find_element(By.CSS_SELECTOR, '#spnTotCnt').text
             if int(검색결과건수) == 0:
                 # 위임자목록에 없음
+                logt(f"위임자목록 조회결과 없음  ==>  다음 양도인 처리 진행")
                 dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', "위임자목록 조회결과 없음")
                 dbjob.insert_auHistory(ht_tt_seq, worker_id, au_x, '위임자목록 조회', ' 검색결과건수 : 0', auto_manager_id)
                 driver.switch_to.default_content()
                 driver.find_element(By.CSS_SELECTOR, "#cmnPopup_dlgp > div > button").click()
-                logi(f"위임자목록 조회결과 없음  ==>  다음 양도인 처리 진행")
                 continue
                 
             # 첫번째 조회결과 클릭
@@ -193,6 +210,8 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             driver.find_element(By.CSS_SELECTOR, '#btnDlgpSelect').click()
             
             driver.switch_to.default_content() #메인프레임으로 이동
+
+
             # ----------------------
             # IFRAME 끝
             # ----------------------
@@ -227,7 +246,9 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             # # 거주구분 선택 : 거주자
             # driver.find_element(By.CSS_SELECTOR, "label[for='rdo_03_01']").click()
             # # 기타 항목이 자동으로 채우기 위해 일정시간 반드시 대기
-            # time.sleep(1)
+            
+            
+            logt("[홈택스 조회] 버튼 클릭", 1)
             
             # 홈택스 조회
             driver.find_element(By.CSS_SELECTOR, "#btnHtxPopup").click()
@@ -261,13 +282,32 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 dbjob.insert_auHistory(ht_tt_seq, worker_id, au_x, '홈택스신고 조회', f"검색결과건수 : {검색결과건수}, 홈택스접수번호={ht_info['hometax_reg_num']}", auto_manager_id)
                 # 닫기버튼
                 driver.find_element(By.CSS_SELECTOR, "#btnHomeClose").click()
-                logi(f"홈택스신고 조회결과 없음  ====================================>  다음 양도인 처리 진행")
+                logt(f"홈택스신고 조회결과 없음  ====================================>  다음 양도인 처리 진행")
                 continue
             else:
                 # 팝업닫기 : 홈택스에서 신고된 내용을 자동채움하였습니다. 계속 진행하세요.                 
                 driver.find_element(By.CSS_SELECTOR, "#btnOk").click()
             
-            time.sleep(1)
+            time.sleep(0.5)
+
+            #법정동 마지막 항목 선택하기
+            try:
+                # 셀렉트 요소 찾기
+                select_box = None
+                관할지_동 = ""
+                try:
+                    select_box = Select(driver.find_element(By.ID, "sel_jrsLgvCdDong"))
+                    관할지_동 = select_box.first_selected_option.text
+                    logt(f"관할지_동 : [{관할지_동}]")
+                except:
+                    sc.set_select_by_option_index(driver, 'sel_jrsLgvCdDong', 2, '관할지_동', 0)
+                    관할지_동 = select_box.first_selected_option.text
+                    dbjob.append_HtTt_remark(ht_tt_seq, f'위택스_신고시_법정동_임의선택 => [{관할지_동}]' )
+                    logt(f"관할지_동 : [{관할지_동}]  <=== 위택스_신고시_법정동_임의선택")
+            except Exception as e:
+                loge(f'{e}')
+
+                
             
             # [다음] 버튼 클릭
             driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
@@ -277,28 +317,28 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             logt("##### 3.신고세액", 다음버튼_대기시간)
             if check_report_step(driver, ht_tt_seq, worker_id, au_x, auto_manager_id, 3) == False : continue
             # ------------------------------------------------
-            driver.find_element(By.CSS_SELECTOR, '#btnAddRow').click()
+            # driver.find_element(By.CSS_SELECTOR, '#btnAddRow').click()
             
-            # [양도소득분 신고세액 등록]  DIV 팝업
-            # 국내외구분 : 국외 선택
-            driver.find_element(By.CSS_SELECTOR, '#layerTaxAmount > div > div > div:nth-child(2) > table > tbody > tr:nth-child(2) > td > span:nth-child(2) > label').click()
+            # # [양도소득분 신고세액 등록]  DIV 팝업
+            # # 국내외구분 : 국외 선택
+            # driver.find_element(By.CSS_SELECTOR, '#layerTaxAmount > div > div > div:nth-child(2) > table > tbody > tr:nth-child(2) > td > span:nth-child(2) > label').click()
             
-            sc.set_select_by_option_index(driver, 'txrCd', 4, '세율구분') 
+            # sc.set_select_by_option_index(driver, 'txrCd', 4, '세율구분') 
             
-            # 5.과세표준
-            양도소득금액 = ht_info['total_income_amount']
-            if not 양도소득금액: 양도소득금액 = 0
-            과세표준금액 = 양도소득금액 - 2_500_000
-            if 과세표준금액 == 0: 
-                과세표준금액 = -1   #과세표준은 0원 입력이 불가로 0원 대신 -1 입력
-            logi(f"과세표준금액 = {str(과세표준금액)}")
+            # # 5.과세표준
+            # 양도소득금액 = ht_info['total_income_amount']
+            # if not 양도소득금액: 양도소득금액 = 0
+            # 과세표준금액 = 양도소득금액 - 2_500_000
+            # if 과세표준금액 == 0: 
+            #     과세표준금액 = -1   #과세표준은 0원 입력이 불가로 0원 대신 -1 입력
+            # logt(f"과세표준금액 = {str(과세표준금액)}")
             
-            # [주의] 1.기본 입력 0값 제거하기  2.과세표준은 0원 입력이 불가
-            driver.find_element(By.CSS_SELECTOR, '#txbAmt').send_keys(Keys.BACKSPACE)
-            driver.find_element(By.CSS_SELECTOR, '#txbAmt').send_keys(str(과세표준금액))
+            # # [주의] 1.기본 입력 0값 제거하기  2.과세표준은 0원 입력이 불가
+            # driver.find_element(By.CSS_SELECTOR, '#txbAmt').send_keys(Keys.BACKSPACE)
+            # driver.find_element(By.CSS_SELECTOR, '#txbAmt').send_keys(str(과세표준금액))
             
-            # [등록] 버튼 클릭
-            driver.find_element(By.CSS_SELECTOR, '#btnTaxAdd').click()
+            # # [등록] 버튼 클릭
+            # driver.find_element(By.CSS_SELECTOR, '#btnTaxAdd').click()
 
             # [다음] 버튼 클릭
             driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
@@ -351,13 +391,13 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
 
 
             # TODO 4단계 진행을 이어서 할 경우
-            # 위택스본세   = driver.find_element(By.CSS_SELECTOR, "#tblReportTaxAmount > tbody > tr > td:nth-child(4) > span.roboto").text
-            # 주소         = driver.find_element(By.CSS_SELECTOR, "#txpAllAddr").text
-            # 전자납부번호 = driver.find_element(By.CSS_SELECTOR, "#elpn").text
+            위택스본세   = driver.find_element(By.CSS_SELECTOR, "#tblReportTaxAmount > tbody > tr > td:nth-child(4) > span.roboto").text
+            주소         = driver.find_element(By.CSS_SELECTOR, "#txpAllAddr").text
+            전자납부번호 = driver.find_element(By.CSS_SELECTOR, "#elpn").text
             
-            # 위택스본세 = int(위택스본세.replace(',', ''))
-            # 관할지  = driver.find_element(By.CSS_SELECTOR, "#jrsLgvNm").text
-            # dbjob.update_HtTt_wetax_complete(ht_tt_seq, 위택스본세, 주소, 전자납부번호, 관할지)
+            위택스본세 = int(위택스본세.replace(',', ''))
+            관할지  = driver.find_element(By.CSS_SELECTOR, "#jrsLgvNm").text
+            dbjob.update_HtTt_wetax_complete(ht_tt_seq, 위택스본세, 주소, 전자납부번호, 관할지)
 
             # try:
             #     # 신고서 출력
@@ -372,11 +412,11 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             
         except Exception as e:
             loge(f'{e}')
-            traceback.print_exc()
-            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', e)
+            #traceback.print_exc()
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"{e}")
         else : # 오류가 없을 경우만 실행
-            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S')
-            logi(">>>>>>>>>> 1건 정상처리")
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', None)
+            logt("####### 1건 처리 완료 #######")     
 
     # End of while
 
@@ -398,9 +438,9 @@ def download_file(driver, ht_info, v_file_type):
     # file_type별 파일이름 결정
     dir_work = ht_file.get_dir_by_htTtSeq(group_id, ht_tt_seq, True)  # True => work 폴더 생성
     fullpath = dir_work +filename    
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
     logt("파일다운로드: Type: %s, Filepath: %s" % (v_file_type, fullpath))
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
     
 
     logt("인쇄팝업 window 오픈 대기", 2)    
@@ -459,11 +499,11 @@ def download_file(driver, ht_info, v_file_type):
                     time.sleep(10)
                     # raise BizException("파일저장 실패", fullpath)
         except Exception as e:
-            logi(e)
+            logt(e)
         
     
     except Exception as e:
-        logi(e)
+        logt(e)
     
     finally:
         # 현재 작업창 닫기
@@ -494,7 +534,7 @@ if __name__ == '__main__':
         driver.set_window_size(1300, 990) # 실제 적용시 : 990
         do_task(driver, user_info, verify_stamp) 
         
-    logi(f"{AU_X}단계 작업 완료")
+    logt(f"{AU_X}단계 작업 완료")
 
     if conn: 
         conn.close()

@@ -150,9 +150,9 @@ def do_step3_loop(driver: WebDriver, ht_info):
     ht_tt_seq = ht_info['ht_tt_seq']
     cur_window_handle = driver.current_window_handle
 
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     logt("양도인=%s, HT_TT_SEQ=%d, SSN= %s%s" % (ht_info['holder_nm'], ht_info['ht_tt_seq'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     
     # 기존 로그 삭제
     dbjob.delete_auHistory_byKey(ht_tt_seq, "3")
@@ -230,9 +230,9 @@ def do_step3_loop(driver: WebDriver, ht_info):
             raise BizException("홈택스 접수번호 불일치", "DB=%s, 홈택스접수번호= %s" % ( ht_info['hometax_reg_num'], hometax_reg_num))
 
         if ht_info['data_type'] == 'AUTO':
-            logi(f"자동신고의 홈텍스 납입세액 = {ht_info['hometax_income_tax']}")
+            logt(f"자동신고의 홈텍스 납입세액 = {ht_info['hometax_income_tax']}")
         else:
-            logi(f"자동신고외의 현재 기준 홈텍스 예상 납입세액(정확하지 않음) = {ht_info['hometax_income_tax']}")
+            logt(f"자동신고외의 현재 기준 홈텍스 예상 납입세액(정확하지 않음) = {ht_info['hometax_income_tax']}")
 
         # 주의) 납부서가 없을 수 있음
         logt("납부서 [보기] 클릭", 1)
@@ -351,7 +351,7 @@ def do_step3_loop(driver: WebDriver, ht_info):
         # 정상적 메세지       : 이미 지방소득세를 신고하신 경우에는 위택스 접속 후
         # 이미 신고가 된 경우 : 홈택스를 통한 신고세액 내역이 존재합니다. 
         if msg.find('홈택스를 통한 신고세액 내역이 존재합니다') >= 0:
-            logi(f"홈택스를 통한 신고세액 내역이 존재합니다  ==> 종료처리") 
+            logt(f"홈택스를 통한 신고세액 내역이 존재합니다  ==> 종료처리") 
             alert.dismiss()
             time.sleep(0.3)
             alert = driver.switch_to.alert
@@ -437,7 +437,7 @@ def do_step3_loop(driver: WebDriver, ht_info):
 
         # 신고 완료 페이지 이동 후
         전자납부번호 = driver.find_element(By.CSS_SELECTOR, "#mainForm > div:nth-child(10) > div.cont_body > div > div > table > tbody > tr > td:nth-child(4)").text
-        logi(f"위택스 전자납부번호={전자납부번호}")
+        logt(f"위택스 전자납부번호={전자납부번호}")
 
         dbjob.update_HtTt_wetax(ht_tt_seq, int(wetax_income_tax), wetax_addr, 전자납부번호)
         # DB Update

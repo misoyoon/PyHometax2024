@@ -127,12 +127,12 @@ def do_task(auto_manager_id, group_id):
                 # AUTO_MANGER: RUN
                 dbjob.update_autoManager_statusCd(auto_manager_id, 'R')
             elif status_cd == 'SW' or status_cd == 'S':                 
-                logi(f'Agent Check : Status={status_cd} ==> 작업 중지') 
+                logt(f'Agent Check : Status={status_cd} ==> 작업 중지') 
                 if status_cd == 'SW':
                     dbjob.update_autoManager_statusCd(auto_manager_id, 'S')
                 return
         else:
-            logi("verify_stamp 변경으로 STOP 합니다.")
+            logt("verify_stamp 변경으로 STOP 합니다.")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
             
 
@@ -140,7 +140,7 @@ def do_task(auto_manager_id, group_id):
         ht_info = dbjob.select_next_au6(group_id, worker_id, seq_where_start, seq_where_end)
 
         if not ht_info:
-            logi("처리할 자료가 없어서 FINISH 합니다. ==> 작업 중지")
+            logt("처리할 자료가 없어서 FINISH 합니다. ==> 작업 중지")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'F', '처리할 자료가 없어서 FINISH 합니다.')
             return
 
@@ -159,9 +159,9 @@ def do_task(auto_manager_id, group_id):
 
         #dbjob.delete_auHistory_byKey(ht_tt_seq, au_x)
         
-        logi("******************************************************************************************************************")
+        logt("******************************************************************************************************************")
         logt("AUX=%s, JOB_COUNT=%s : 양도인=%s, HT_TT_SEQ=%d" % (au_x, job_cnt, ht_info['holder_nm'], ht_info['ht_tt_seq']))
-        logi("******************************************************************************************************************")
+        logt("******************************************************************************************************************")
 
         #base_dir = ht_file.get_root_dir(group_id)
         #pdf_file = ht_file.get_dir_by_htTtSeq(group_id, ht_tt_seq)

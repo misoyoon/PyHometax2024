@@ -32,7 +32,7 @@ def login_wetax(driver:WebDriver):
 
 def init_selenium() -> WebDriver:
     cur_dir = os.getcwd()
-    logi(f'CURRENT DIR={cur_dir}')
+    logt(f'CURRENT DIR={cur_dir}')
     '''
     middle_dir = os.path.dirname(sys.argv[0]) + os.sep
     if middle_dir:
@@ -41,7 +41,7 @@ def init_selenium() -> WebDriver:
     
     #cur_dir = os.getcwd()
     #chromedriver_path =  cur_dir + os.sep + "chromedriver.exe" #resource_path("chromedriver.exe")
-    #logi("크롬드라이버 위치=%s" % chromedriver_path)
+    #logt("크롬드라이버 위치=%s" % chromedriver_path)
 
     try:
         chrome_options = Options()
@@ -120,7 +120,7 @@ def login_guest(driver, login_info):
     in_login_pw = driver.find_element(By.CSS_SELECTOR, '#iptUserPw')
     in_login_pw.send_keys(login_info['login_pw'])
 
-    logi("[로그인] 버튼 클릭", 2)
+    logt("[로그인] 버튼 클릭", 2)
     driver.find_element(By.CSS_SELECTOR, '#anchor25').click()
 
 
@@ -178,7 +178,7 @@ def login_3step(driver, login_info):
         # ==> 이코드는 동작 안함 WebDriverWait(driver, 10).until(EC.alert_is_present())
         alert = driver.switch_to.alert
         # Alert창 메세지 출력
-        logi(alert.text)
+        logt(alert.text)
         # 확인 버튼
         alert.accept()
     except:
@@ -246,7 +246,7 @@ def login_2step(driver, login_info):
     iframe1 = driver.find_element(By.CSS_SELECTOR, '#txppIframe')
     driver.switch_to.frame(iframe1)
 
-    logi("[공동,금융인증서] 버튼 클릭", 2)
+    logt("[공동,금융인증서] 버튼 클릭", 2)
     driver.find_element(By.CSS_SELECTOR, '#anchor22').click()
 
 
@@ -269,14 +269,14 @@ def login_2step(driver, login_info):
         # ==> 이코드는 동작 안함 WebDriverWait(driver, 10).until(EC.alert_is_present())
         alert = driver.switch_to.alert
         # Alert창 메세지 출력
-        logi(alert.text)
+        logt(alert.text)
         # 확인 버튼
         alert.accept()
     except:
         loge("주의 할 것!! 이상한게도 한번은 exception이 발생한다!!!!!")
         alert = driver.switch_to.alert
         # Alert창 메세지 출력
-        logi(alert.text)
+        logt(alert.text)
         # 확인 버튼
         alert.accept()
         

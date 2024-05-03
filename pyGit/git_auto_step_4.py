@@ -53,7 +53,7 @@ def main():
     # #############################################################
 
     if len(git_infos) == 0:
-        logi("작업할 리스트가 없습니다. 작업종료")    
+        logt("작업할 리스트가 없습니다. 작업종료")    
         sys.exit()
     
     try:
@@ -125,7 +125,7 @@ def main():
                     driver.find_element(By.ID, 'taxSeq').send_keys(git_info['hometax_reg_num'])
                     time.sleep(0.3)
 
-                    logi(f"주민번호= {git_info['ssn1']}-{git_info['ssn2']}, 홈택스 접수번호= {git_info['hometax_reg_num']}")
+                    logt(f"주민번호= {git_info['ssn1']}-{git_info['ssn2']}, 홈택스 접수번호= {git_info['hometax_reg_num']}")
                     elements = driver.find_elements(By.CSS_SELECTOR, '.searchBtn')
                     #print(elements)
                     elements[0].click() # 첫번째 것을 조회버튼으로 인식
@@ -164,7 +164,7 @@ def main():
                     
                 i_name = e_name.text.strip()
 
-                logi(f"[이름 비교] 작업 예상 이름:현재 결과조회 이름 => {git_info['nm']}:{i_name}")
+                logt(f"[이름 비교] 작업 예상 이름:현재 결과조회 이름 => {git_info['nm']}:{i_name}")
                 if git_info['nm'] != i_name:
                     raise BizException("이름이 달라서 건너뛰기")
 
@@ -316,9 +316,9 @@ def download_file(driver:WebDriver, git_info, attach_type):
     base_dir = git_file.get_dir_by_gitSeq(git_seq, True)  # True => 폴더 생성
     filename = f"down{attach_type}.pdf" #git_file.get_file_name_by_type(attach_type)
     fullpath = base_dir + filename
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
     logt("파일다운로드: attach_type=%s, Filepath=%s" % (attach_type, fullpath))
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
 
     # 이미지 리소스 폴더
     resource_dir = os.path.dirname(os.path.abspath(__file__))  #os.path.dirname(sys.modules['__main__'].__file__)
@@ -363,7 +363,7 @@ def download_file(driver:WebDriver, git_info, attach_type):
         ans = pyautoui_image_click(btn_print_path)
         if ans == False:
             # 상단 프린터A 누르기
-            logi("상단 프린터A 누르기 (재시도)")
+            logt("상단 프린터A 누르기 (재시도)")
             pyautoui_image_click(img_print_path)
             time.sleep(0.5)
             ans = pyautoui_image_click(btn_print_path)
@@ -389,7 +389,7 @@ def download_file(driver:WebDriver, git_info, attach_type):
         raise BizException(f"블루 저장버튼 찾기 ERROR, path={img_save_path}")
 
     # 다운로드 팝업창 뜨기 => 여기도 경우에 따라 시간이 좀 걸림
-    logi(f"다운로드 팝업창 뜨기 : attach_type = {attach_type}")
+    logt(f"다운로드 팝업창 뜨기 : attach_type = {attach_type}")
     
     # if not attach_type == "1":
     #     logt("단순대기", 10.0)
@@ -405,7 +405,7 @@ def download_file(driver:WebDriver, git_info, attach_type):
             raise BizException(f"[다른이름으로 저장하기] 노출오류, path={img_save_path}")
         
         
-        logi(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
+        logt(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
         pyautogui.typewrite(fullpath)
         time.sleep(0.5)
         pyautogui.press('enter')   # 저장하기 위해 파일경로 넣고 엔터치기
@@ -429,8 +429,8 @@ def download_file(driver:WebDriver, git_info, attach_type):
             dbjob.update_git_au_x(group_id, git_seq, AU_X, 'E', 'file size is not found')
 
     except Exception as e:
-        logi(e)
-        logi("오류로 프로그램 종료대기 600초")
+        logt(e)
+        logt("오류로 프로그램 종료대기 600초")
         time.sleep(600)
 
 
@@ -443,12 +443,12 @@ def pyautoui_image_click(img_path):
     for retry in range(6):
         # confidence인식 못하는 오류 : pip install opencv-python
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.7)
-        logi(f'pyautoui_image_click() : filepath={img_path}, center={center}')
+        logt(f'pyautoui_image_click() : filepath={img_path}, center={center}')
 
         if center == None :
             pyautogui.moveTo(10,10)  # 일부러 마우스 움직이기
             time.sleep(0.5)
-            logi(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
+            logt(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
         else :
             time.sleep(0.3) # 0.3초후 클릭
             pyautogui.click(center)
@@ -466,7 +466,7 @@ def pyautoui_image_wait(img_path, retry_num=10):
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.7)
 
         if center == None :
-            logi(f"이미지 클릭 재시도: {img_path} : retry={retry}")
+            logt(f"이미지 클릭 재시도: {img_path} : retry={retry}")
         else :
             logt(f"이미지 영역 찾기 완료 : {img_path}, center={center}")
             return True

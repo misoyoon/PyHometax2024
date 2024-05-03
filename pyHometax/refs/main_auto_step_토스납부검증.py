@@ -150,9 +150,9 @@ def do_step3_loop(driver: WebDriver, ht_info):
     ht_tt_seq = ht_info['ht_tt_seq']
     cur_window_handle = driver.current_window_handle
 
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     logt("양도인=%s, HT_TT_SEQ=%d, SSN= %s%s" % (ht_info['holder_nm'], ht_info['ht_tt_seq'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
-    logi("******************************************************************************************************************")
+    logt("******************************************************************************************************************")
     
     ssn = ht_info['holder_ssn1'] + ht_info['holder_ssn2']
 
@@ -221,9 +221,9 @@ def do_step3_loop(driver: WebDriver, ht_info):
             raise BizException("홈택스 접수번호 불일치", "DB=%s, 홈택스접수번호= %s" % ( ht_info['hometax_reg_num'], hometax_reg_num))
 
         if ht_info['data_type'] == 'AUTO':
-            logi(f"자동신고의 홈텍스 납입세액 = {ht_info['hometax_income_tax']}")
+            logt(f"자동신고의 홈텍스 납입세액 = {ht_info['hometax_income_tax']}")
         else:
-            logi(f"자동신고외의 현재 기준 홈텍스 예상 납입세액(정확하지 않음) = {ht_info['hometax_income_tax']}")
+            logt(f"자동신고외의 현재 기준 홈텍스 예상 납입세액(정확하지 않음) = {ht_info['hometax_income_tax']}")
 
         # 주의) 납부서가 없을 수 있음
         logt("납부서 [보기] 클릭", 1)
@@ -325,7 +325,7 @@ group_id = ""
 for_one_user_name = ""
 for_one_user_id   = ""
 if len(sys.argv) == 1:
-    logi("실행할 담당자 정보가 없습니다.")
+    logt("실행할 담당자 정보가 없습니다.")
     exit()
 else :
     try:
@@ -344,9 +344,9 @@ else :
         loge("그룹 정보를 입력하지 않으셨습니다.")
         exit()
 
-logi("###########################################")
-logi("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
-logi("###########################################")
+logt("###########################################")
+logt("서버정보: DB USER=%s, DIR=%s, DEBUG=%s" % (config.DATABASE_CONFIG['user'], config.FILE_ROOT_DIR, config.IS_DEBUG))
+logt("###########################################")
 
 
 dbjob_toss.set_global(group_id, None, None, None, None) 
@@ -357,9 +357,9 @@ if __name__ == '__main__':
     logt("홈택스 양도소득세 자동신고 서버 기동 !!!")
     logt("  ==> 신고3단계 : 위택스 신고")
 
-    logi("# ------------------------------------------------------------------")
-    logi("담당자 작업 정보 : GROUP_DI=%s, ID=%s, Name=%s" % (group_id, for_one_user_id, for_one_user_name))
-    logi("# ------------------------------------------------------------------")
+    logt("# ------------------------------------------------------------------")
+    logt("담당자 작업 정보 : GROUP_DI=%s, ID=%s, Name=%s" % (group_id, for_one_user_id, for_one_user_name))
+    logt("# ------------------------------------------------------------------")
 
     # 세무대리인(담당자) 리스트
     user_list = dbjob_toss.get_worker_list(group_id, for_one_user_id)
@@ -367,7 +367,7 @@ if __name__ == '__main__':
     
     # 담당자별로 한번에 처리한 자료수
     batch_bundle_count = config.BATCH_BUNDLE_COUNT
-    logi("배치 처리 건수=%d" % batch_bundle_count)
+    logt("배치 처리 건수=%d" % batch_bundle_count)
 
 
     dbjob_toss.set_global(group_id, None, None, None, au_step)   # (v_host_name, v_user_id, v_ht_tt_seq, v_au_step):
@@ -376,12 +376,12 @@ if __name__ == '__main__':
     import_seq = 13
     jobs = dbjob_toss.select_auto_toss_importSeq(group_id, for_one_user_id, import_seq)
     
-    logi("-------------------------------------------------------------")
-    logi("%s님의 이번 처리 건수=%d" % (for_one_user_name, len(jobs)))
+    logt("-------------------------------------------------------------")
+    logt("%s님의 이번 처리 건수=%d" % (for_one_user_name, len(jobs)))
     if len(jobs) == 0:
-        logi("처리할 자료가 없습니다.")
+        logt("처리할 자료가 없습니다.")
         exit()
-    logi("-------------------------------------------------------------")
+    logt("-------------------------------------------------------------")
 
 
     # ------------------------------------------------------------------

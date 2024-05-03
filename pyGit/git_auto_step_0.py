@@ -35,10 +35,10 @@ def main():
     # #############################################################
     
     if len(git_infos) == 0:
-        logi("진행할 작업이 없습니다. 프로그램을 종료합니다.")
+        logt("진행할 작업이 없습니다. 프로그램을 종료합니다.")
         sys.exit()
     else:
-        logi(f"홈택스 종합소득세 파일다운로드 작업 ::: 총 실행 건수 = {len(git_infos)}")
+        logt(f"홈택스 종합소득세 파일다운로드 작업 ::: 총 실행 건수 = {len(git_infos)}")
         
         
     driver: WebDriver = auto_login.init_selenium()
@@ -48,12 +48,12 @@ def main():
     i = 0
     for git_info in git_infos:
         i += 1
-        logi(f">>>>>>> 현재 실행 위치 {i} / {len(git_infos)} <<<<<<<<")
-        logi(f"======= {git_info['git_seq']} =  {git_info['nm']}  {git_info['ssn1']}{git_info['ssn2']} :  {git_info['hometax_id']} / {git_info['hometax_pw']}")
+        logt(f">>>>>>> 현재 실행 위치 {i} / {len(git_infos)} <<<<<<<<")
+        logt(f"======= {git_info['git_seq']} =  {git_info['nm']}  {git_info['ssn1']}{git_info['ssn2']} :  {git_info['hometax_id']} / {git_info['hometax_pw']}")
 
         git_seq = git_info['git_seq']
         
-        logi("홈텍스 메인페이지 이동")
+        logt("홈텍스 메인페이지 이동")
         driver.get("https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml")
         driver.implicitly_wait(10)
 
@@ -64,13 +64,13 @@ def main():
         login_info['login_pw'] = git_info['hometax_pw']
         
         if git_info['hometax_id_confirm'] != 'Y':
-            logi("이전에 로그인에 실패하였습니다.  홈택스ID/PWD를 확인 후 다시 시도하세요")
+            logt("이전에 로그인에 실패하였습니다.  홈택스ID/PWD를 확인 후 다시 시도하세요")
             
         
         # 자동로그인 처리
         logt("로그인 시간", 1)
         auto_login.login_guest(driver, login_info)
-        logi("로그인 완료")
+        logt("로그인 완료")
         
         #
         try:
@@ -83,7 +83,7 @@ def main():
             if alert_msg.find("비밀번호가") >= 0  :   # 비밀번호가 [3]회 잘못 입력되었습니다
                 dbjob.update_git_hometaxIdConfirm(group_id, git_seq, 'N')
                 alert.accept()
-                logi("비밀번호 오류로 다음 차례 진행 ~~~~~~~~")
+                logt("비밀번호 오류로 다음 차례 진행 ~~~~~~~~")
                 continue
         except Exception as e:
             logt("정상로그인")
@@ -178,7 +178,7 @@ def main():
                 dbjob.insert_신고안내_소득리스트(group_id, git_seq, git_list_info)
         except Exception as e:
             # 소득리스트가 없을 경우 이쪽으로 온다
-            logi("사업장 수입금액 없습니다.")
+            logt("사업장 수입금액 없습니다.")
 
 
         총계row = driver.find_elements(By.CSS_SELECTOR, '#gridList2018_foot_table > tbody > tr > td')   
@@ -218,7 +218,7 @@ def main():
         ret_val = download_file(git_info, attach_type)
 
 
-        logi("다른 오픈된 윈도우 닫기")
+        logt("다른 오픈된 윈도우 닫기")
         if len(driver.window_handles) > 1:
             driver.switch_to.window(driver.window_handles[1])
             driver.close()
@@ -270,10 +270,10 @@ def capture_screen(driver, git_info, filename, attach_type):
     fullpath = work_dir + filename
     time.sleep(1.5)
     driver.save_screenshot(fullpath)
-    logi(f"화면 캡쳐 경로={fullpath}")
+    logt(f"화면 캡쳐 경로={fullpath}")
     
     dic_git_file = git_file.make_file_data(git_info['group_id'], git_info['git_seq'], git_info['nm'], attach_type, True )
-    logi(f"화면 캡쳐 정보={dic_git_file}")
+    logt(f"화면 캡쳐 정보={dic_git_file}")
     
     dbjob.insert_git_file(dic_git_file)
 
@@ -287,9 +287,9 @@ def download_file(git_info, attach_type):
     # file_type별 파일이름 결정
     dir_basic = git_file.get_dir_by_gitSeq(git_seq)  # True => 폴더 생성
     fullpath = dir_basic + filename
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
     logt(f"파일다운로드: Filepath: {fullpath}")
-    logi("------------------------------------------------------")
+    logt("------------------------------------------------------")
 
     # 이미지 리소스 폴더
     resource_dir = os.path.dirname(os.path.abspath(__file__))  #os.path.dirname(sys.modules['__main__'].__file__)
@@ -312,12 +312,12 @@ def download_file(git_info, attach_type):
     ans = pyautoui_image_click(btn_print_path)
     if ans == False:
         # 상단 프린터A 누르기
-        logi("상단 프린터A 누르기 (재시도)")
+        logt("상단 프린터A 누르기 (재시도)")
         pyautoui_image_click(img_print_path)
         time.sleep(0.5)
         ans = pyautoui_image_click(btn_print_path)
         if ans == False:
-            logi("회색 인쇄버튼 클릭 실패(재시도)")
+            logt("회색 인쇄버튼 클릭 실패(재시도)")
             time.sleep(600)
 
 
@@ -332,11 +332,11 @@ def download_file(git_info, attach_type):
     pyautoui_image_click(img_save_path)
 
     # 다운로드 팝업창 뜨기 => 여기도 경우에 따라 시간이 좀 걸림
-    logi(f"다운로드 팝업창 뜨기")
+    logt(f"다운로드 팝업창 뜨기")
     time.sleep(5)
 
     try:
-        logi(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
+        logt(f"다른이름 저장하기 (경로명 입력) pyautogui.typewrite= {fullpath}")
         pyautogui.typewrite(fullpath)
         time.sleep(0.2)
         pyautogui.press('enter')   # 저장하기 위해 파일경로 넣고 엔터치기
@@ -364,7 +364,7 @@ def download_file(git_info, attach_type):
 
     except Exception as e:
         dbjob.update_git_au_x(group_id, git_seq, AU_X, 'E', e)
-        logi("Exception 발생")
+        logt("Exception 발생")
         #time.sleep(600)
         return False
 
@@ -376,11 +376,11 @@ def pyautoui_image_click(img_path):
     for retry in range(6):
         # confidence인식 못하는 오류 : pip install opencv-python
         center = pyautogui.locateCenterOnScreen(img_path, confidence=0.7)
-        logi(f'pyautoui_image_click() : filepath={img_path}, center={center}')
+        logt(f'pyautoui_image_click() : filepath={img_path}, center={center}')
 
         if center == None :
             time.sleep(0.5)
-            logi(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
+            logt(f"        이미지 클릭 재시도: {img_path} : retry={retry}")
         else :
             time.sleep(0.3) # 0.3초후 클릭
             pyautogui.click(center)
