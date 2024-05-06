@@ -1,12 +1,16 @@
-SERVER_TYPE = "DEV"  #개발환경: DEV, 운영환경: PROD
+SERVER_TYPE = "PROD"  #개발환경: DEV, 운영환경: PROD
 
 IS_DEBUG = False  # 쿠키로그인
 DB_QUERY_PRINT = False
 LOG_LEVEL = 'DEBUG'
 
+
+# 홈페이지가 느릴 때 가중치
+TIME_WEIGHT = 1.2
+
 # 주석처리
 # group_id = 'the1'
-FILE_ROOT_DIR_BASE = "U:\\TaxAssist\\files\HtTt\\"
+FILE_ROOT_DIR_BASE = "U:\\TaxAssist\\files\\HtTt\\"
 
 # 자동신고(단계별) 로그 생성
 AUTO_STEP_LOG_DIR   = "V:/PyHometax_Log_2024/AutoStep"

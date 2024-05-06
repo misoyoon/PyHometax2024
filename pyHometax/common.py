@@ -82,8 +82,12 @@ def logt(title, t=0):
     if t==0 :
         logger.info(title)
     else :
-        logger.info(f"[{str(t)}초 후] {title}")
-        time.sleep(t * config.TIME_WEIGHT)
+        wtime = t * config.TIME_WEIGHT
+        time.sleep(wtime)
+        if config.TIME_WEIGHT > 1:
+            logger.info(f"[{str(t)} * {str(config.TIME_WEIGHT)}초 후] {title}")
+        else:
+            logger.info(f"[{str(t)}초 후] {title}")
 
 def ht_sleep(t=0):
     if t>0:
@@ -195,4 +199,15 @@ class BizException(Exception):
     # toString()
     def __str__(self):
         return "예외처리 : name={}, message={}".format( self.name, self.msg)
+
+class BizNextLoopException(Exception):
+    # 생성자
+    def __init__(self, name, msg="", aux_result="S"):
+        self.name = name
+        self.msg = msg
+        self.aux_result = aux_result
+    
+    # toString()
+    def __str__(self):
+        return "다음 순번 진행(정상동작) AU_X=>{} : name={}, message={}".format(self.aux_result, self.name, self.msg)        
         

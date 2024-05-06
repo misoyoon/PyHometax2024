@@ -305,7 +305,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                     dbjob.append_HtTt_remark(ht_tt_seq, f'위택스_신고시_법정동_임의선택 => [{관할지_동}]' )
                     logt(f"관할지_동 : [{관할지_동}]  <=== 위택스_신고시_법정동_임의선택")
             except Exception as e:
-                loge(f'{e}')
+                loge(f'{str(e)[:100]}')
 
                 
             
@@ -411,9 +411,9 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             #         dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S')
             
         except Exception as e:
-            loge(f'{e}')
+            loge(f'{str(e)[:100]}')
             #traceback.print_exc()
-            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"{e}")
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"{str(e)[:100]}")
         else : # 오류가 없을 경우만 실행
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', None)
             logt("####### 1건 처리 완료 #######")     

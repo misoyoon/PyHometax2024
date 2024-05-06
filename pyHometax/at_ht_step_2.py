@@ -26,7 +26,7 @@ AU_X = '2'
 (driver, user_info, verify_stamp) = step_common.init_step_job()
 # -------------------------------------------------------------
 
-def do_task(driver: WebDriver, user_info, verify_stamp):
+def do_task(driver: WebDriver, verify_stamp):
 
     window_handles = driver.window_handles
     main_window_handle = window_handles[0]
@@ -72,8 +72,22 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         else:
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
             
-
+        # 작업자 정보 조회
+        user_info = dbjob.get_worker_info(worker_id)
+        
+        # 쿠키점검
+        cookie_TXPPsessionID = get_cookie_value(driver, 'TXPPsessionID')
+        cookie_TEHTsessionID = get_cookie_value(driver, 'TEHTsessionID')
+        if user_info['txpp_session_id'] != cookie_TXPPsessionID:
+            logt(f"DRIVER TXPP=: {cookie_TXPPsessionID}")
+            logt(f"UserDB TXPP=: {user_info['txpp_session_id']}")
+        if user_info['teht_session_id'] != cookie_TEHTsessionID:
+            logt(f"DRIVER TXPP=: {cookie_TEHTsessionID}")
+            logt(f"UserDB TXPP=: {user_info['teht_session_id']}")
+        
+        # ----------------------------------------------
         # 홈택스 신고서제출 자료            
+        # ----------------------------------------------
         ht_info = dbjob.select_next_au2(group_id, worker_id, seq_where_start, seq_where_end)
         
         if not ht_info:
@@ -108,18 +122,21 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             # -----------------------------------------------------------------------
             do_step2_loop(driver, ht_info)
 
+        except BizNextLoopException as e:
+            loge(f'do_step2_loop :: BizNextLoopException(정상동작) - {e}')
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, e.aux_result, e.msg)
         except BizException as e:
             loge(f'do_step2_loop :: BizException ERROR - {e}')
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f'{e.name}:{e.msg}')
             #dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'{e.name}:{e.msg}')
             loge("오류 발생으로 해당 단계 작업 중지!!!")
-            # break
+            break
         except Exception as e:
             loge(f'do_step2_loop :: Exception ERROR - {e}')
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f'{e}')
             #dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'{e}')
             loge("오류 발생으로 해당 단계 작업 중지!!!")
-            # break
+            break
         else:  # 오류없이 정상 처리시
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', None)
         # -----------------------------------------------------------------------
@@ -131,7 +148,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
 
 
 def file_download(ht_info, v_file_type):
-    time.sleep(1)
+    ht_sleep(1)
     group_id =  ht_info['group_id']
     ht_tt_seq = ht_info['ht_tt_seq']
     holder_nm = ht_info['holder_nm']
@@ -143,7 +160,7 @@ def file_download(ht_info, v_file_type):
     logt("파일다운로드: Type: %s, Filepath: %s" % (v_file_type, fullpath))
     logt("------------------------------------------------------")
 
-    #time.sleep(3)
+    #ht_sleep(3)
     # 이미 존재하면 삭제 (pdf 다운로드시 이미 존재하면 덮어쓰기 하겠냐고 질문하는 것을 회피 하기위해)
     if os.path.isfile(fullpath):
         os.remove(fullpath)
@@ -156,34 +173,34 @@ def file_download(ht_info, v_file_type):
             driver.switch_to.frame("iframe2_UTERNAAZ34")
 
         driver.find_element(By.CSS_SELECTOR, "button[title='인쇄']").click()
-        time.sleep(0.3)
+        ht_sleep(0.3)
         pyautogui.press('tab', presses=4, interval=0.1)
         pyautogui.press('enter')
         logt("확인버튼 클릭 후 인쇄화면 출력 대기", 2)    
         # 저장 클릭        
-        time.sleep(2)
+        ht_sleep(2)
         pyautogui.press('enter')  
     elif v_file_type == "HT_DOWN_3":
         driver.find_element(By.CSS_SELECTOR, "button[title='인쇄']").click()
-        time.sleep(3)
+        ht_sleep(3)
         # 저장 클릭
         pyautogui.press('enter')
 
     # 팝업: 다른이름으로 저장 
     logt(f"파일타입={v_file_type}, 파일 경로 쓰기 = {fullpath}", 1)    
     pyautogui.typewrite(fullpath)
-    time.sleep(2)
+    ht_sleep(2)
     pyautogui.press('enter')   # 저장하기 위해 파일경로 넣고 엔터치기         
 
     # 파일 저장 결과 확인
-    time.sleep(1)
+    ht_sleep(1)
     if os.path.isfile(fullpath):
         logt("파일저장 성공: 파일타입= %s, 경로= %s" % (v_file_type,fullpath))
         logt("파일저장 확인완료 => DB 입력하기")
         dbjob.insert_or_update_upload_file(v_file_type, group_id, ht_tt_seq, holder_nm)
         return True
     else:
-        time.sleep(3.0)
+        ht_sleep(3.0)
         if os.path.isfile(fullpath):
             logt("(재시도)파일저장 성공: 파일타입= %s, 경로= %s" % (v_file_type,fullpath))
             logt("(재시도)파일저장 확인완료 => DB 입력하기")
@@ -262,12 +279,11 @@ def do_step2_loop(driver: WebDriver, ht_info):
     ssn = ht_info['holder_ssn1'] + ht_info['holder_ssn2']
     logt("주민번호 입력: %s" % ssn, 0.1)
     driver.find_element(By.ID, 'input_txprRgtNo_UTERNAAZ31').clear()
-    time.sleep(0.2)
+    ht_sleep(0.2)
     driver.find_element(By.ID, 'input_txprRgtNo_UTERNAAZ31').send_keys(ssn)
 
-    time.sleep(0.5)
-    logt("조회클릭")
-    driver.find_element(By.ID, 'trigger70_UTERNAAZ31').click()
+    #driver.find_element(By.ID, 'trigger70_UTERNAAZ31').click()
+    sc.click_button_by_id(driver, 'trigger70_UTERNAAZ31', '신고내역 조회', 1)
 
     alt_msg = sc.click_alert(driver, "조회가 완료되었습니다.")
     logt("Alter Message Return=%s" % alt_msg)
@@ -298,35 +314,45 @@ def do_step2_loop(driver: WebDriver, ht_info):
         offset = 0
         if ele1.text == "정기신고" :
             offset = 0
+            raise BizException(f"offset 불일치", "신고종류={ele1.text}")
         elif ele2.text == "정기신고" :
             offset = 1
 
-        logt("결과 OFFSET= %d" % offset)
+        logt("정기신고 OFFSET= %d" % offset)
 
-        selector = "#ttirnam101DVOListDes_cell_0_" +str(5+offset)+ " > span"
-        print (selector)
-        ele = driver.find_element(By.CSS_SELECTOR, selector)    
+        # 양도인명
+        ele = driver.find_element(By.CSS_SELECTOR,  "#ttirnam101DVOListDes_cell_0_6 > span")    
         hometax_holder_nm = ele.text
-        # 양도인 이름이 같은지 조회
+
+        ele = driver.find_element(By.CSS_SELECTOR,  "#ttirnam101DVOListDes_cell_0_7 > span")    
+        hometax_holder_ssn = ele.text
 
         # 신청_홈택스_이름차이_목록 = ["이해룡", "함경님"]
         # if not ht_info['holder_nm'] in 신청_홈택스_이름차이_목록:
-        logt("양도인명 확인 = %s, Hometax= %s" % (ht_info['holder_nm'], hometax_holder_nm))
-        if hometax_holder_nm != ht_info['holder_nm']:
-            raise BizException("양도인명 불일치", "홈택스 양도인명= %s" % hometax_holder_nm)
+        logt("양도인 확인1 = %s, Hometax= %s" % (ht_info['holder_nm'],   hometax_holder_nm))
+        logt("양도인 확인2 = %s, Hometax= %s" % (ht_info['holder_ssn1'], hometax_holder_ssn))
+
+        if hometax_holder_nm.find(ht_info['holder_nm']) == -1 :
+            #이름 불일치 하면 생년월일 비교
+            if hometax_holder_ssn.find(ht_info['holder_ssn1']) == -1 :
+                raise BizException("양도인명 불일치", "홈택스 양도인명= %s" % hometax_holder_nm)
 
         # 홈택스 접수번호
-        ele = driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(9+offset)+ " > span > a")
+        ele = driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_10 > span > a")
         hometax_reg_num = ele.text
         logt("홈택스 접수번호= %s" % hometax_reg_num)
-        #dbjob.update_HtTt_hometaxRegNum(ht_tt_seq, hometax_reg_num)  
+        
+        if ht_info['data_type'] == 'SEMI':
+            dbjob.update_HtTt_hometaxRegNum(ht_tt_seq, hometax_reg_num)  
+            logt("[반자동] 홈택스 접수번호 업데이트 = %s" % hometax_reg_num)
+
 
         try:
             logt('# -----------------------------------------------------------------')
             logt('#                        1) 납부계산서                             ')
             logt('# -----------------------------------------------------------------')
 
-            ele_s = driver.find_elements(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(9+offset)+ " > span > a")
+            ele_s = driver.find_elements(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_10 > span > a")
             ele_s[0].click()
             
             # 팝업윈도우가 2개가 더 오픈되기 위한 충분한 시간을 주기
@@ -336,7 +362,7 @@ def do_step2_loop(driver: WebDriver, ht_info):
             if len(window_handles) < 3:  # 윈도우가 모두 뜨지 않았을 경우 대기
                 for x in range(15):
                     logt(f"윈도우 수량이 3개가 될때까지 대기, 현재 윈도우 갯수 = {len(window_handles)}")
-                    time.sleep(1)
+                    ht_sleep(1)
                     window_handles = driver.window_handles
                     if len(window_handles) == 3:
                         break
@@ -349,14 +375,14 @@ def do_step2_loop(driver: WebDriver, ht_info):
             if (driver.title == "신고서미리보기") :
                 # 작업 진행 윈도우가 맞음, 다만 다른 윈도우를 닫아야 함
                 try :
-                    time.sleep(1)
+                    ht_sleep(1)
                     driver.switch_to.window(window_handles[2])
 
                     logt("현재창  : title= %s  ==> [개인정보 공개] 선택" % driver.title)
                     driver.find_element(By.ID, "ntplInfpYn_input_0").click()
-                    time.sleep(0.2)
+                    ht_sleep(0.2)
                     driver.find_element(By.ID, "trigger1").click()
-                    time.sleep(1)
+                    ht_sleep(1)
 
                     logt("현재 윈도우 갯수 (예상되는 정상수량은 2) : 갯수= %d" % len(driver.window_handles))
                     if len(driver.window_handles) == 3: logt("창이 닫기를 좀더 기다리기", 1)
@@ -374,9 +400,9 @@ def do_step2_loop(driver: WebDriver, ht_info):
                 # "신고서 보기 개인정보 공개여부"
                 logt("현재창  : title= %s  ==> [개인정보 공개] 선택" % driver.title)
                 driver.find_element(By.ID, "ntplInfpYn_input_0").click()
-                time.sleep(0.2)
+                ht_sleep(0.2)
                 driver.find_element(By.ID, "trigger1").click()
-                time.sleep(1)
+                ht_sleep(1)
 
                 logt("현재 윈도우 갯수 (예상되는 정상수량은 2) : 갯수= %d" % len(driver.window_handles))
                 if len(driver.window_handles) == 3: logt("창이 닫기를 좀더 기다리기", 1)
@@ -440,14 +466,14 @@ def do_step2_loop(driver: WebDriver, ht_info):
 
         try:
             logt("접수증 [보기] 클릭", 1)
-            driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(11+offset)+ " > span > button").click()
+            driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_12 > span > button").click()
             
             logt("윈도우 로딩 대기", 1)
             window_handles = driver.window_handles
             logt(f"윈도우 갯수= {len(window_handles)}") 
             if len(window_handles) == 1:
                 logt("접수증 [보기] 클릭(재시도)", 0.1)
-                driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(11+offset)+ " > span > button").click()
+                driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_12 > span > button").click()
 
                 logt("윈도우 전환 재시도", 2) 
                 window_handles = driver.window_handles
@@ -481,22 +507,45 @@ def do_step2_loop(driver: WebDriver, ht_info):
             logt('#                        4) 납부서                                 ')
             logt('# -----------------------------------------------------------------')
 
+            # ttirnam101DVOListDes_cell_0_13 납부서_버튼_text => "보기"
+            # ttirnam101DVOListDes_cell_0_38 납부여부 => 'N', 'Y', '-'
+            logt(f"현재 양도인 정보 : {ht_tt_seq}, {ht_info['holder_nm']}, {ht_info['holder_ssn1']}{ht_info['holder_ssn2']}")
+
             logt("4) 납부서 > 작업프레임 이동: txppIframe", 0.5)
             driver.switch_to.frame("txppIframe")
 
-            # 주의) 납부서가 없을 수 있음
-            logt("납부서 [보기] 클릭", 1)
+            납부여부 = ''
             try :
-                ele = driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_" +str(12+offset)+ " > span > button")
-                ele.click()
+                # Y,N인 경우는 아래 A태그 있음, '-' A태그 없음
+                ele = driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_38 > span")  
+                납부여부 = ele.text
+                logt(f"납부여부 ====> [{납부여부}]")
+                if 납부여부 == 'Y':
+                    dbjob.update_htTt_hometaxPaidYn(ht_tt_seq, 'Y')
+                    BizNextLoopException("납부", "납부완료", "S")
+                elif 납부여부 == '-':
+                    BizNextLoopException("납부서 없음", "", "S")
+                
             except Exception as e:
-                logt("납부서가 없습니다.")
-                raise BizException("납부할금액없음", f"납부서 Click불가")
-            
-            logt("작업프레임 이동: UTERNAAZ70_iframe", 1.5)
+                logt(f"납부여부 확인 중 오류 발생 : {str(e)[:100]}")
+                raise BizException("납부여부 확인오류", f"#ttirnam101DVOListDes_cell_0_38 읽기오류")
+
+            # 주의) 납부서가 없을 수 있음
+            납부서_버튼_text = ''
+            try :
+                ele = driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_13 > span > button")
+                납부서_버튼_text = ele.text
+                logt(f"납부서 버튼명 ====> [{납부서_버튼_text}]")
+                if 납부서_버튼_text.strip() == '보기':
+                    ele.click()
+            except Exception as e:
+                logt(f"납부서 버튼 클릭 중 오류 발생 : {str(e)[:100]}")
+                raise BizException("납부할금액없음", f"납부서 Click불가: [{납부서_버튼_text}]")
+
+
+            logt("납부서 작업프레임 이동: UTERNAAZ70_iframe", 1.5)
             try :
                 driver.switch_to.frame("UTERNAAZ70_iframe")
-
             except Exception as e:
                 #alert = driver.switch_to_alert()
                 #if alert_msg.find("양도소득세 납부할금액이 없습니다") == 0 :
@@ -638,10 +687,22 @@ def do_step2_loop(driver: WebDriver, ht_info):
 
 if __name__ == '__main__':
     if driver:
-        driver.set_window_size(1300, 990) # 실제 적용시 : 990
-        do_task(driver, user_info, verify_stamp) 
+        driver.set_window_size(1200, 990) # 실제 적용시 : 990
+        로그인_이름 = driver.find_element(By.ID, 'hdTxtUserNm').text
+        logt(f"현재 담당자={user_info['id']}, ID={user_info['name']}, 로그인 이름 = {로그인_이름}")
+        
+        if 로그인_이름.find('세무법인') == -1:
+            logt("로그인 실패로 재로그인 진행")
+            driver.close()
+            dbjob.reset_user_hometax_cookie(user_info['id'])
+            logt(f'로그인 쿠키 초기화')
+            (driver, user_info, verify_stamp) = step_common.init_step_job()
+
+        do_task(driver, verify_stamp) 
     
-    logt(f"{AU_X}단계 작업 완료")
+    logt(f"=======================================================")
+    logt(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>       2단계 작업 완료")
+    logt(f"=======================================================")
 
     if conn:
         conn.close()

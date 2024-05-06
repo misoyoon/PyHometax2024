@@ -85,7 +85,7 @@ def init_step_job():
         # ----------------------------------------------------------------------------
         # 자동로그인 처리 (홈택스)
         # ----------------------------------------------------------------------------
-        if user_info['cookie_diff_minute'] <= 27:
+        if user_info['cookie_diff_minute'] <= 20 and user_info['txpp_session_id'] :
             # 쿠키로그인
             logt(f"홈택스 로그인 : 쿠키방식 TXPPsessionID={user_info['txpp_session_id']}, TEHTsessionID={user_info['teht_session_id']}")
             auto_login.login_hometax_use_cookie(driver, user_info['txpp_session_id'], user_info['teht_session_id'])

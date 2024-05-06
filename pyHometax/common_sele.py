@@ -18,8 +18,7 @@ from common import *
 
 #iframe 전환 : 로그인화면은 화면전체가 iframe
 def move_iframe(driver: WebDriver, target_iframe:str='txppIframe', sleep=0.5):
-    if sleep > 0:
-        time.sleep(sleep)
+    if sleep > 0: time.sleep(sleep)
         
     logt("ifreme 전환: ID=%s" % target_iframe)
     iframes = driver.find_elements(By.TAG_NAME, 'iframe')
@@ -27,27 +26,33 @@ def move_iframe(driver: WebDriver, target_iframe:str='txppIframe', sleep=0.5):
     is_exist_iframe = False
     frame_idx = 0
     for iframe in iframes:
-        frame_idx += 1
-        iframe_name = iframe.get_attribute('name')
-        iframe_id = iframe.get_attribute('id')
-        if iframe_name == target_iframe or iframe_id == target_iframe:
-            is_exist_iframe = True
-            logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                     <=== Selected")
-        else:
-            logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
-
-    if is_exist_iframe == False:
-        time.sleep(2)
-        logt(f"    IFRAME을 찾을 수 없어 다시 한번 시도합니다.")
-        for iframe in iframes:
+        try:
             frame_idx += 1
             iframe_name = iframe.get_attribute('name')
             iframe_id = iframe.get_attribute('id')
             if iframe_name == target_iframe or iframe_id == target_iframe:
                 is_exist_iframe = True
-                logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                 <=== Selected")
-            else:
-                logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
+                logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                     <=== Selected !")
+            #else:
+            #    logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
+        except Exception as e:
+            print(f"move_iframe() 에러 발생1: {str(e)[:100]}")                
+
+    if is_exist_iframe == False:
+        time.sleep(2)
+        logt(f"    IFRAME을 찾을 수 없어 다시 한번 시도합니다.")
+        for iframe in iframes:
+            try:
+                frame_idx += 1
+                iframe_name = iframe.get_attribute('name')
+                iframe_id = iframe.get_attribute('id')
+                if iframe_name == target_iframe or iframe_id == target_iframe:
+                    is_exist_iframe = True
+                    logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}                 <=== Selected")
+                #else:
+                #    logt(f"    IFRAME 정보: id={iframe_id}, name={iframe_name}")
+            except Exception as e:
+                print(f"move_iframe() 에러 발생2: {str(e)[:100]}")     
 
     try :
         if is_exist_iframe :
@@ -59,7 +64,7 @@ def move_iframe(driver: WebDriver, target_iframe:str='txppIframe', sleep=0.5):
 
     except Exception as e:
         loge("iframe 전환 예외")
-        #loge(f'{e}')
+        #loge(f'{str(e)[:100]}')
         return False
 
 
@@ -153,19 +158,51 @@ def click_alert_dismiss(driver: WebDriver, msg, sleep=0.5) -> str:
 
 
 # INPUT 박스에 값 넣기
-def set_input_value_by_id(driver: WebDriver, id:str, value: str, title: str, sleep=0.2):
-    if sleep > 0:
-        time.sleep(sleep)
+def set_input_value_by_id(driver: WebDriver, id:str, value: str, title: str, sleep=0.2, max_attempts=6):
+    if sleep > 0: time.sleep(sleep)
+
     logt(f"INPUT Set value id={id}: {title} => [{value}]", sleep)
-    driver.find_element(By.ID, id).send_keys(value)
+
+    for i in range(max_attempts):
+        try:    
+            input_element = driver.find_element(By.ID, id)
+            if input_element.is_displayed() and input_element.is_enabled():
+                input_element.send_keys(value)
+                return True
+            else:
+                loge(f"현재 입력 불가한 상태입니다. i={i}")
+        except Exception as e:
+            print(f"set_input_value_by_id() 에러 발생: {str(e)[:100]}")
+
+        time.sleep(0.5)
+
+    logt(f"최대 시도 횟수 {max_attempts} 후에도 입력할 수 없습니다.")
+    return False
+
 
 # BUTTON 클릭
-def click_button_by_id(driver: WebDriver, id:str, title: str, sleep=0.2):
-    if sleep > 0:
-        time.sleep(sleep)
+def click_button_by_id(driver: WebDriver, id:str, title: str, sleep=0.2, max_attempts=6):
+    if sleep > 0:  time.sleep(sleep)
     
     logt(f"Click button (id={id}): {title} 클릭", sleep)
-    driver.find_element(By.ID, id).click()
+
+    # 버튼이 클릭 가능한지 확인합니다
+    for i in range(max_attempts):
+        try:
+            button = driver.find_element(By.ID, id)
+            if button.is_enabled():
+                button.click()
+                return True
+            else:
+                loge(f"현재 버튼이 클릭 불가한 상태입니다. i={i}")
+        except Exception as e:
+            print(f"set_input_value_by_id() 에러 발생: {str(e)[:100]}")
+
+        time.sleep(0.5)
+
+    logt(f"최대 시도 횟수 {max_attempts} 후에도 입력할 수 없습니다.")
+    return False
+
     
 def set_select_by_option_index(driver: WebDriver, id:str, select_index: int, title: str, sleep=0.2):    
     if sleep > 0:
@@ -208,6 +245,6 @@ def check_availabe_driver(driver):
         title = driver.title
         return True
     except Exception as e:
-        loge(f'{e}')
+        loge(f'{str(e)[:100]}')
         return False
     

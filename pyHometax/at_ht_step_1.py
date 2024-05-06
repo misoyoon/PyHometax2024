@@ -30,13 +30,15 @@ AU_X = '1'
 #     logt("연습용 테스트 입니다.  향후 삭제해야합니다.", 1)
 #     continue
 
-def do_task(driver: WebDriver, user_info, verify_stamp):
+def do_task(driver: WebDriver, verify_stamp):
     wait_10 = WebDriverWait(driver, 10)
 
     job_cnt = 0
     while True:
         job_cnt += 1
         
+
+
         # AutoManager 상태 판단 (매 건 처리마다 상태 확인)
         at_info = dbjob.select_autoManager_by_id(auto_manager_id)
 
@@ -65,7 +67,22 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             logt('[자동화 진행상태 점검] verify_stamp 변경으로 STOP 합니다.')
             break
 
+        # 작업자 정보 조회
+        user_info = dbjob.get_worker_info(worker_id)
+
+        # 쿠키점검
+        cookie_TXPPsessionID = get_cookie_value(driver, 'TXPPsessionID')
+        cookie_TEHTsessionID = get_cookie_value(driver, 'TEHTsessionID')
+        if user_info['txpp_session_id'] != cookie_TXPPsessionID:
+            logt(f"DRIVER TXPP=: {cookie_TXPPsessionID}")
+            logt(f"UserDB TXPP=: {user_info['txpp_session_id']}")
+        if user_info['teht_session_id'] != cookie_TEHTsessionID:
+            logt(f"DRIVER TXPP=: {cookie_TEHTsessionID}")
+            logt(f"UserDB TXPP=: {user_info['teht_session_id']}")
+
+        # ----------------------------------------------
         # 홈택스 신고서제출 자료            
+        # ----------------------------------------------
         ht_info = dbjob.select_next_au1(group_id, worker_id, seq_where_start, seq_where_end)
         
         if not ht_info:
@@ -117,7 +134,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             go_확정신고(driver, wait_10)
 
         except Exception as e:
-            logt(f"예외발생 : go_확정신고() => 처음부터 재시도 - {e}")
+            logt(f"예외발생 : go_확정신고() => 처음부터 재시도 - {str(e)[:100]}")
             logt("처음부터 다시 시작", 0.5)
 
             try:
@@ -165,9 +182,9 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 break # 한건이라도 오류가 발생하면 해당 자동화작업 정지
 
         except Exception as e:
-            loge(f'{e}')
-            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f'{e}')
-            dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'{e}')
+            loge(f'{str(e)[:100]}')
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f'{str(e)[:100]}')
+            dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'{str(e)[:100]}')
             loge("오류 발생으로 해당 단계 작업 중지!!!")
             break # 한건이라도 오류가 발생하면 해당 자동화작업 정지
         
@@ -201,7 +218,7 @@ def go_확정신고(driver: WebDriver, wait):
     element = wait.until(EC.element_to_be_clickable((By.ID, "textbox163292957")))
     element.click()
 
-    logt("단순대기", 1)
+    logt("단순대기", 3)
     
 
 
@@ -226,7 +243,7 @@ def do_step1(driver: WebDriver, ht_info):
     work_dir = ht_file.get_work_dir_by_htTtSeq(group_id, ht_tt_seq)
 
     try:
-        ht_sleep(1.5)
+        ht_sleep(2)
         팝업체크_유무 = sc.move_iframe(driver, 'UTERNAAV52_iframe')
 
         if 팝업체크_유무:
@@ -252,8 +269,19 @@ def do_step1(driver: WebDriver, ht_info):
     holder_ssn1 = ht_info['holder_ssn1']
     holder_ssn2 = ht_info['holder_ssn2']
     logt("값입력 : 주민번호 %s%s" % (holder_ssn1, holder_ssn2), 0.2)
-    driver.find_element(By.ID, 'edtResNo0').send_keys(holder_ssn1)
-    driver.find_element(By.ID, 'edtResNo1').send_keys(holder_ssn2)
+    try:
+        driver.find_element(By.ID, 'edtResNo0').send_keys(holder_ssn1)
+    except:
+        driver.find_element(By.ID, 'edtResNo0').clear()
+        driver.find_element(By.ID, 'edtResNo0').send_keys(holder_ssn1)
+
+    try:
+        driver.find_element(By.ID, 'edtResNo1').send_keys(holder_ssn2)
+    except:
+        driver.find_element(By.ID, 'edtResNo1').clear()
+        driver.find_element(By.ID, 'edtResNo1').send_keys(holder_ssn2)
+
+    
 
     # 주민번호 확인 => [확인]버튼 클릭
     logt("주민번호 확인 => [확인]버튼 클릭", 3)
@@ -322,7 +350,8 @@ def do_step1(driver: WebDriver, ht_info):
 
     # 클릭 : 조회
     logt("클릭: 양도연월 옆의 [조회]", 0.5)
-    driver.find_element(By.ID, 'btnTrnYm').click()
+    #driver.find_element(By.ID, 'btnTrnYm').click()
+    driver.execute_script("$('#btnTrnYm').click();")
     ht_sleep(2)
 
     # 이전자료 불러오기 혹은 신규등록
@@ -466,8 +495,9 @@ def do_step1(driver: WebDriver, ht_info):
 
 
     # 클릭 : 저장 후 다음이동
-    logt("클릭 : [저장 후 다음이동]", 1)
-    driver.find_element(By.ID, 'btnProcess').click()
+    logt("클릭 : [저장 후 다음이동]", 0.5)
+    #driver.find_element(By.ID, 'btnProcess').click()
+    sc.click_button_by_id(driver, 'btnProcess', "[저장 후 다음이동]", 0.5)
 
     logt("단순대기", 0.5)
     alert = driver.switch_to.alert
@@ -491,9 +521,9 @@ def do_step1(driver: WebDriver, ht_info):
     #logt("IFRAME이동 : 메인", 1)
     #sc.move_iframe(driver) 
     
-    logt("클릭 : [저장 후 다음이동]", 1)
+    logt("클릭 : [저장 후 다음이동]", 0.5)
     #driver.find_element(By.ID, 'btnProcess').click()
-    driver.execute_script("$('#btnProcess').click();")
+    sc.click_button_by_id(driver, 'btnProcess', "[저장 후 다음이동]", 0.5)
 
     # -------------------------------------------------------------------------
     # 04.주식등양도소득금액계산명세서
@@ -518,21 +548,39 @@ def do_step1(driver: WebDriver, ht_info):
         # 클릭: 확인
         #sc.click_alert(driver, '사업자등록번호가 확인되었습니다.')
 
-        
-        # 국가조회 버튼 클릭
-        sc.click_button_by_id(driver, 'btnAbrdAstsNtn', '국가조회', 0.5)
+        try:
+            # 국가조회 버튼 클릭
+            ret = sc.click_button_by_id(driver, 'btnAbrdAstsNtn', '국가조회', 1)
+            logt(f"국가조회 클릭 결과 Return={ret}", 1.5)
 
-        ht_sleep(2)  # 이게 중요할지모 모름
-        sc.move_iframe(driver, 'UTECMAAA04_iframe', 0.1)
+            try:
+                ret = sc.move_iframe(driver, 'UTECMAAA04_iframe', 1)
+                logt(f"iframe 전환 Return={ret}")
+            except:
+                try:
+                    # 한번더 시도
+                    ret = sc.click_button_by_id(driver, 'btnAbrdAstsNtn', '국가조회', 1)
+                    logt(f"국가조회 클릭 결과 Return={ret}")
+                    ret = sc.move_iframe(driver, 'UTECMAAA04_iframe', 1)
+                    logt(f"iframe 전환 Return={ret}")
+                except:
+                    pass
 
-        sc.set_input_value_by_id(driver, 'ntnCd',  'US', '국가코드', 0.5)
-        #sc.click_button_by_id(driver, 'trigger5', '조회', 2)
-        ht_sleep(0.5)
-        driver.execute_script("$('#trigger5').click();")
-        # 결과조회 테이블에서 첫번째 결과인 미국 선택
-        ht_sleep(0.5)
-        ele = driver.find_element(By.CSS_SELECTOR, "#grdNtnCd_cell_0_2 > button")
-        ele.click()        
+            ret = sc.set_input_value_by_id(driver, 'ntnCd',  'US', '국가코드', 0.5)
+            logt(f"국가코드 입력 결과 Return={ret}")
+
+            sc.click_button_by_id(driver, 'trigger5', '조회 버튼', 1)
+            #driver.execute_script("$('#trigger5').click();")
+
+            # 결과조회 테이블에서 첫번째 결과인 미국 선택
+            try:
+                logt("조회된 결과 중 첫번째 선택", 1)
+                ele = driver.find_element(By.CSS_SELECTOR, "#grdNtnCd_cell_0_2 > button")
+                ele.click()        
+            except Exception as e:
+                loge(f"조회선택 오류 : {str(e)[:100]}")
+        except:
+            raise BizException("국가조회오류", "미국선택 오류")
         
         # 상위프레임 이동
         ht_sleep(0.5)
@@ -544,26 +592,26 @@ def do_step1(driver: WebDriver, ht_info):
 
 
         # FIXME 20231231, 20230101 점검
-        sc.set_input_value_by_id(driver, 'edtAcqTypeClTrnStocCnt', str(trade['sell_qnt']) , '(7)양도주식 수', 0 )
+        sc.set_input_value_by_id(driver, 'edtAcqTypeClTrnStocCnt', str(trade['sell_qnt']) , '(7)양도주식 수',  0.1)
         #sc.set_input_value_by_id(driver, 'edtTrnDt_input', str(trade['sell_date']).replace('-', ''), '(8)양도일자', 0)
-        sc.set_input_value_by_id(driver, 'edtTrnDt_input', '20231231', '(8)양도일자', 0)
+        sc.set_input_value_by_id(driver, 'edtTrnDt_input', '20231231', '(8)양도일자', 0.1)
         #sc.set_input_value_by_id(driver, 'edtEcstTrnAmt',  str(trade['sell_per_price']), '(9)주당양도가액', 0)
-        sc.set_input_value_by_id(driver, 'edtTrnAmt',      str(trade['sell_amount']), '(10)양도가액')
+        sc.set_input_value_by_id(driver, 'edtTrnAmt',      str(trade['sell_amount']), '(10)양도가액', 0.2)
         #sc.set_input_value_by_id(driver, 'edtAcqDt_input', str(trade['buy_date']).replace('-', ''), '(11) 취득일자', 0)
-        sc.set_input_value_by_id(driver, 'edtAcqDt_input', '20230101', '(11) 취득일자', 0)
+        sc.set_input_value_by_id(driver, 'edtAcqDt_input', '20230101', '(11) 취득일자', 0.1)
         #sc.set_input_value_by_id(driver, 'edtEcstAcqAmt',  str(trade['buy_per_price']), '(12) 주당취득가액', 0)
-        sc.set_input_value_by_id(driver, 'edtAcqAmt',      str(trade['buy_amount']), '(13) 취득가액')
-        sc.set_input_value_by_id(driver, 'edtNdXps',       str(trade['fees_amount']), '(14) 필요경비'), 0
+        sc.set_input_value_by_id(driver, 'edtAcqAmt',      str(trade['buy_amount']), '(13) 취득가액', 0.1)
+        sc.set_input_value_by_id(driver, 'edtNdXps',       str(trade['fees_amount']), '(14) 필요경비', 0.1)
         
-        # 추가히기 버튼 클릭        
-        sc.click_button_by_id(driver, 'trigger101', '등록(추가)하기')
+        # 추가하기 버튼 클릭   
+        sc.click_button_by_id(driver, 'trigger101', '등록(추가)하기', 0.5)
         #alert_ret = sc.click_alert(driver, '양도가액이 취득유형별 양도주식수 * 주당양도가액과 같지 않습니다.')
         #alert_ret = sc.click_alert(driver, '취득가액이 취득유형별 양도주식수 * 주당취득가액과 같지 않습니다.')
         alert_ret = sc.click_alert(driver, '입력한 주식양도소득금액명세서를 등록하시겠습니까?')
-        
-    sc.click_button_by_id(driver, 'trigger2', '저장 후 다음이동')
-    sc.click_alert(driver, '저장 하시겠습니까?')
-    sc.click_alert(driver, '다음화면으로 이동하시겠습니까?')
+    
+    sc.click_button_by_id(driver, 'trigger2', '저장 후 다음이동', 1)
+    sc.click_alert(driver, '저장 하시겠습니까?', 0.5)
+    sc.click_alert(driver, '다음화면으로 이동하시겠습니까?', 0.5)
 
     
 
@@ -582,6 +630,7 @@ def do_step1(driver: WebDriver, ht_info):
     #sc.set_input_value_by_id(driver, 'edtPmtInsyAdtTxamt', "100000" , '테스트용(삭졔예정)' )
 
     # (홈택스 페이지에 있는) 양도소득금액
+    time.sleep(1)
     try:
         # 관리홈피 거래내역 리스트의 총 양도소득금액
         sum_income_amount = dbjob.select_HtTtList_sumIncomeAmount(ht_tt_seq)
@@ -596,12 +645,13 @@ def do_step1(driver: WebDriver, ht_info):
         except Exception as e:
             # 오류가 나서 그냥 관린홈피 리스트 값으로 대체
             hometax_total_income_amount = sum_income_amount
-            logt(f"홈택스 신고금액 vs ht_tt_list 합계 금액 비교 중 오류1, {e}")
+            logt(f"홈택스 신고금액 vs ht_tt_list 합계 금액 비교 중 오류1, {str(e)[:100]}")
 
-        if ht_info['other_sec_data'] == 'N' and hometax_total_income_amount != sum_income_amount:
-            raise BizException("거래내역 불일치","관리페이지 거래내역리스트와 홈택스 신고된 양도소득금액이 일치하지 않습니다.")
     except Exception as e:
-        logt(f"홈택스 신고금액 vs ht_tt_list 합계 금액 비교 중 오류2, {e}")
+        logt(f"홈택스 신고금액 vs ht_tt_list 합계 금액 비교 중 오류2, {str(e)[:100]}")
+
+    if ht_info['other_sec_data'] == 'N' and hometax_total_income_amount != sum_income_amount:
+        raise BizException("거래내역 불일치", f"관리페이지 거래내역리스트와 홈택스 신고된 양도소득금액이 일치하지 않습니다. {hometax_total_income_amount} != {sum_income_amount}")
 
     # 기본공제금액 입력
     if hometax_total_income_amount >= 2_500_000:
@@ -632,8 +682,7 @@ def do_step1(driver: WebDriver, ht_info):
     #     ...
         
 
-    ht_sleep(0.5)
-    sc.click_button_by_id(driver, 'trigger28', '등록하기')
+    sc.click_button_by_id(driver, 'trigger28', '등록하기', 0.5)
     
     try:
         alert= driver.switch_to.alert
@@ -653,14 +702,14 @@ def do_step1(driver: WebDriver, ht_info):
             else:
                 logt(f"기본공제 : 없음")
             
-            sc.click_button_by_id(driver, 'trigger28', '등록하기')
+            sc.click_button_by_id(driver, 'trigger28', '등록하기', 0.5)
         else:
             alert.accept()  
     except Exception as e:
         ...
 
         
-    sc.click_button_by_id(driver, 'btnProcess', '저장 후 다음이동')
+    sc.click_button_by_id(driver, 'btnProcess', '저장 후 다음이동', 0.5)
     sc.click_alert(driver, "저장 후 다음화면으로 이동하시겠습니까?", 0.5)
 
     # -------------------------------------------------------------------------
@@ -697,7 +746,7 @@ def do_step1(driver: WebDriver, ht_info):
 
 
     # 신고서 제출
-    sc.click_button_by_id(driver, 'btnProcess', '신고서 제출')
+    sc.click_button_by_id(driver, 'btnProcess', '신고서 제출', 0.5)
     sc.click_alert(driver, '신고서를 제출하시겠습니까?')
     sc.click_alert(driver, "신고서 제출이 완료되었습니다", 0.5)
 
@@ -716,6 +765,7 @@ def do_step1(driver: WebDriver, ht_info):
 
     # 아래의 경우는 2024년에 추가됨
     try :
+        logt("check_point 0")
         sc.click_alert(driver, "이미 제출완료된 신고서 입니다")
     except:
         logt("클릭 except 3, 이미 제출완료된 신고서 입니다")
@@ -736,17 +786,39 @@ def do_step1(driver: WebDriver, ht_info):
     dbjob.update_HtTt_hometaxRegNum(ht_tt_seq, 홈택스접수번호)
 
 
-    logt("팝업체크박스 체크 : 확인하였습니다.", 1)
-    driver.find_element(By.ID, 'checkbox2_input_0').click()
+    #logt("팝업체크박스 체크 : 확인하였습니다.", 1)
+    #driver.find_element(By.ID, 'checkbox2_input_0').click()
+    sc.click_button_by_id(driver, 'checkbox2_input_0', "팝업체크박스 체크 : 확인하였습니다.", 1)
     
     sc.click_alert(driver, "개인지방소득세는 별도 신고해야 합니다.", 1)
+    
 
     logt(f"{ht_tt_seq} 번 DB성공처리")
     dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', '')
 
+    # 아래의 경우는 2024년에 추가됨
+    try :
+        logt("check_point 1")
+        sc.click_alert(driver, "이미 제출완료된 신고서 입니다")
+    except:
+        logt("클릭 except 3, 이미 제출완료된 신고서 입니다")
+
+    logt(f"현재 양도인 정보 : {ht_tt_seq}, {ht_info['holder_nm']}, {ht_info['holder_ssn1']}{ht_info['holder_ssn2']}")
+    logt("강제로 Return 시켜보기 ~~~~~~~~~~~~~")
+    logt("---------------------------------------------------------------------------------------")
+    return
+
     # 팝업iframe 닫기
     logt("클릭: [닫기] 팝업iframe", 1)
     driver.find_element(By.ID, 'trigger15').click()
+
+    # 아래의 경우는 2024년에 추가됨 (여기저기 막 넣기)
+    try :
+        logt("check_point 2")
+        sc.click_alert(driver, "이미 제출완료된 신고서 입니다")
+    except:
+        logt("클릭 except 3, 이미 제출완료된 신고서 입니다")
+
 
     # # 증빙서류 제출
     # logt("클릭: [증빙서류 제출]", 0.5)
@@ -778,10 +850,24 @@ def do_step1(driver: WebDriver, ht_info):
 
 if __name__ == '__main__':
     if driver:
-        driver.set_window_size(1500, 1100)
-        do_task(driver, user_info, verify_stamp) 
+        #print(f"user_info={user_info}")
+        driver.set_window_size(1300, 1100)
+
+        로그인_이름 = driver.find_element(By.ID, 'hdTxtUserNm').text
+        logt(f"현재 담당자={user_info['id']}, ID={user_info['name']}, 로그인 이름 = {로그인_이름}")
+        
+        if 로그인_이름.find('세무법인') == -1:
+            logt("로그인 실패로 재로그인 진행")
+            driver.close()
+            dbjob.reset_user_hometax_cookie(user_info['id'])
+            logt(f'로그인 쿠키 초기화')
+            (driver, user_info, verify_stamp) = step_common.init_step_job()
+
+        do_task(driver, verify_stamp) 
     
-    logt(f"{AU_X}단계 작업 완료")
+    logt(f"=======================================================")
+    logt(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>       1단계 작업 완료")
+    logt(f"=======================================================")
 
     if conn:
         conn.close()

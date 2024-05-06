@@ -170,6 +170,65 @@ def update_htTt_aux_running(ht_tt_seq, au_x) :
 # =============================================================================== select_auto_1
 
 
+
+
+def select_htTt_by_key(ht_tt_seq):
+    rs = None
+
+    sql = '''
+        SELECT *  
+        FROM ht_tt 
+        WHERE ht_tt_seq = %s
+    '''
+    
+    param = (ht_tt_seq, )
+    common.logqry(sql, param)
+    
+    try:
+        with conn.cursor() as curs:
+            curs.execute(sql, param)
+            rs = curs.fetchone()
+            common.logrs(rs)
+            conn.commit()
+    except Exception as e:
+        print(f"오류 발생: {e}")
+            
+    return rs
+
+
+def select_download_file_info(ht_tt_seq, group_id='the1'):
+    param = (group_id, ht_tt_seq)
+
+    sql = '''
+    select ht_tt_seq, reg_id, holder_nm, holder_ssn1, holder_ssn2, data_type, t.step_cd, other_sec_data
+        , au1, au2, au3, au4 
+        , IFNULL(au2_msg, '') au2_msg
+        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result1_file_seq = f.ht_tt_file_seq) result1
+        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result2_file_seq = f.ht_tt_file_seq) result2
+        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result3_file_seq = f.ht_tt_file_seq) result3
+        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result4_file_seq = f.ht_tt_file_seq) result4
+        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result5_file_seq = f.ht_tt_file_seq) result5
+        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result8_file_seq = f.ht_tt_file_seq) result8
+        , IFNULL(t.total_income_amount, 0) total_income_amount
+        , IFNULL(t.hometax_income_tax, 0) hometax_income_tax
+        , IFNULL(t.wetax_income_tax, 0) wetax_income_tax
+        , IFNULL(t.hometax_installment1, 0) hometax_installment1
+        , IFNULL(t.hometax_installment2, 0) hometax_installment2
+    from ht_tt t
+    where t.ht_series_yyyymm ='202405'
+        and t.group_id = %s
+        and ht_tt_seq = %s
+        '''
+
+    with conn.cursor() as curs: 
+        common.logqry(sql, param)
+        curs.execute(sql, param)
+        
+        # 데이타 Fetch
+        return curs.fetchone()
+
+
+
 ###################################################################
 # 1단계 -  홈택스 신고
 ###################################################################
@@ -274,7 +333,7 @@ def select_next_au3(group_id:str, worker_id:str, start_seq=0, end_seq=0):
         SELECT *  FROM ht_tt 
         WHERE group_id=%s
             AND ht_series_yyyymm = '202405'
-            AND (data_type='AUTO' OR data_type='SEMI')
+            AND (data_type='AUTO' OR (data_type='SEMI' AND holder_bank_account is null))
             AND step_cd='REPORT' 
             AND au1='S' 
             AND ( au3 IS NULL OR au3 = '' )
@@ -573,6 +632,20 @@ def update_user_hometax_cookie(user_id, txpp_session_id, teht_session_id) :
     curs.execute(sql, param)
     conn.commit()
     
+def reset_user_hometax_cookie(user_id) :
+    param = (user_id, )
+    curs = conn.cursor()
+    sql = '''
+        UPDATE user 
+        SET   txpp_session_id = null 
+            , teht_session_id = null
+            , cookie_modi_dt = null
+        WHERE id = %s
+        '''
+    common.logqry(sql, param)
+    curs.execute(sql, param)
+    conn.commit()
+
 
 # 사용자별 최신 자동신고 일시변경
 def update_user_cookieModiDt(user_id) :
@@ -587,13 +660,30 @@ def update_user_cookieModiDt(user_id) :
 # 홈택스에 신고된 납부세액
 def update_htTt_hometaxIncomeTax(ht_tt_seq, hometax_income_tax) :
     param = (hometax_income_tax, ht_tt_seq)
-    # 이전 실기록 삭제
     sql = "UPDATE ht_tt SET hometax_income_tax = %s WHERE ht_tt_seq = %s"
     with conn.cursor() as curs:
         common.logqry(sql, param)
         curs.execute(sql, param)
         conn.commit()
 
+
+# 홈택스 납부여부 수정
+def update_htTt_hometaxPaidYn(ht_tt_seq, hometax_paid_yn) :
+    param = (hometax_paid_yn, ht_tt_seq)
+    sql = "UPDATE ht_tt SET hometax_paid_yn = %s WHERE ht_tt_seq = %s"
+    with conn.cursor() as curs:
+        common.logqry(sql, param)
+        curs.execute(sql, param)
+        conn.commit()
+
+# 위택스 납부여부 수정
+def update_htTt_hometaxPaidYn(ht_tt_seq, wetax_paid_yn) :
+    param = (wetax_paid_yn, ht_tt_seq)
+    sql = "UPDATE ht_tt SET wetax_paid_yn = %s WHERE ht_tt_seq = %s"
+    with conn.cursor() as curs:
+        common.logqry(sql, param)
+        curs.execute(sql, param)
+        conn.commit()
 
 def delete_auHistory_byKey(ht_tt_seq, au_step) :
     param = (ht_tt_seq, au_step)
@@ -1407,7 +1497,8 @@ def select_all_HtTt(step_cd=None):
     '''
     if step_cd is not None:
         sql += "AND step_cd='%s'" % (step_cd, )
-    '''
+    
+    sql += '''
             -- AND ht_tt_seq=6
         ORDER BY ht_tt_seq asc
     '''
