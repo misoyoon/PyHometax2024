@@ -1,6 +1,6 @@
-import 위택스_4단계_점검_data as data
-import dbjob
+
 '''
+
 function call_wetax_list(param) {
 	$.ajax({
 		type : "POST",
@@ -35,29 +35,52 @@ var params = {
         "txiCd": "140002"
     },
     "common": {
-        "uxId": "cdc829ee-02f1-4bb4-8040-4e9747d7fa40",
+        "uxId": "6d7629ea-c2ea-41fb-85f9-36be5831928b",
         "sPgmId": "B070302",
         "menuId": ""
     }
 }
 
 params.titxaDclrDVO.dclrYmdBgng = "20240501"
-params.titxaDclrDVO.dclrYmdEnd  = "20240502"
-params.titxaDclrDVO.rowCount  = 2000
-params.titxaDclrDVO.totalCount  = 2000
+params.titxaDclrDVO.dclrYmdEnd  = "20240512"
+params.pagerVO.pageNo  		= 1
+params.pagerVO.rowCount  	= 5000
+params.pagerVO.totalCount  	= 17790
 call_wetax_list(params)
-
 
 
 // 상세페이지 이동
 https://www.wetax.go.kr/etr/lit/b0703/B070302M02.do?dclrId=10000000000002194687&objCd=T&objType=P&bgDclrId=&linkTyp=
 
 '''
+from datetime import datetime
+import logging 
+import dbjob
+import sys
 
+
+DATA_KEY = "result_page_2"
+
+# 로깅 설정
+current_time = datetime.now()
+now = current_time.strftime("%Y%m%d_%H%M%S")
+
+log_filename = f"V:/PyHometax_Log_2024/WetaxDclrId/dclrid_{now}.log"
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+file_handler = logging.FileHandler(log_filename, encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger = logging.getLogger()
+logger.addHandler(file_handler)
+
+sys.path.append("E:\\Temp\\wetax2")
+import result_page_1 as result
 
 
 def getWetaxData():
-    wetax_data = data.result_0502['titxaDclrDVOList']
+    # FIXME
+    wetax_data = result.data['titxaDclrDVOList']
+    logger.info(f"가공 전 wetax_data LEN= {len(wetax_data)}")
     elpn_map = {}
 
     for idx, row in enumerate(wetax_data):
@@ -75,7 +98,7 @@ def getWetaxData():
         elif dclrCmnRcptClCd == "06" and payYmd == None:
             납부여부 = "미납"
 
-        #print(idx , ' 이름 {:<6}'.format(이름), 주민번호, dclrId, 납세번호,  납부금액, 전자납부번호, 신고완료_취소, 납부여부)
+        #logger.info(idx , ' 이름 {:<6}'.format(이름), 주민번호, dclrId, 납세번호,  납부금액, 전자납부번호, 신고완료_취소, 납부여부)
         
         weinfo = {
             "index"             : idx
@@ -91,6 +114,12 @@ def getWetaxData():
 
         }
 
+        try:
+            if elpn_map[row['elpn']]:
+                print(f"중복 {row['elpn']} ==> {weinfo}")
+        except:
+            ...
+
         elpn_map[row['elpn']] = weinfo
 
     return elpn_map
@@ -99,30 +128,50 @@ def getWetaxData():
 
 
 def main():
-    rs_ht_info = dbjob.select_hTtT_au4_for_dclrid('the1')
-    
-    print("LEN", len(rs_ht_info))
-
     affected_cnt = 0
     wetax_data = getWetaxData()
+    logger.info(f"가공 후 wetax_data LEN= {len(wetax_data)}")
+
+    #FIXME
+    #print("작업 확인을 위한 중간에 고의 중단")
+    sys.exit()
+
+    rs_ht_info = dbjob.select_hTtT_au4_for_dclrid('the1')
+    logger.info(f"dclrId가 없는 위택스 문서 다운로드 rs LEN= {len(rs_ht_info)}")
+
+
+    err_cnt = 0
     for ht_info in rs_ht_info:
         wetax_reg_num = ht_info['wetax_reg_num'].replace('-', '')
-        matching_data = wetax_data[wetax_reg_num]
-        if matching_data:
-            # print(ht_info['ht_tt_seq'], ht_info['holder_nm'], ht_info['holder_ssn1'], ht_info['holder_ssn2'], matching_data['dclrId'])
-            
-            wetax_paid_yn = None
-            if matching_data['납부여부'] == '납부': wetax_paid_yn = 'Y'
+        if not wetax_reg_num:
+            logger.info(f"wetax_reg_num 없음: {ht_info['holder_nm']} {ht_info['holder_ssn1']} {ht_info['holder_ssn2']}")
+            continue
 
-            if ht_info['wetax_income_tax'] == matching_data['납부금액']:
-                affected_cnt += dbjob.update_HtTt_wetaxDclrId(ht_info['ht_tt_seq'], matching_data['dclrId'], wetax_paid_yn)
-                ...
+        try:
+            matching_data = wetax_data[wetax_reg_num]
+            if matching_data:
+                logger.info(f"{ht_info['ht_tt_seq']}, {ht_info['holder_nm']}, {ht_info['holder_ssn1']}{ht_info['holder_ssn2']}, wetax_dclrId={matching_data['dclrId']}")
+                
+                wetax_paid_yn = None
+                if matching_data['납부여부'] == '납부': wetax_paid_yn = 'Y'
+
+                if ht_info['wetax_income_tax'] == matching_data['납부금액']:
+                    affected_cnt += dbjob.update_HtTt_wetaxDclrId(ht_info['ht_tt_seq'], matching_data['dclrId'], wetax_paid_yn)
+                    ...
+                else:
+                    if ht_info['wetax_income_tax'] == 0 and matching_data['납부금액']<0:
+                        # 같은 것으로 인정하기
+                        logger.info(f"납부금액에 차이가 있음. {ht_info['holder_nm']} {ht_info['holder_ssn1']} {ht_info['holder_ssn2']} :: 신고={ht_info['wetax_income_tax'] } != 위택스={matching_data['납부금액']}  <===  정상처리")
+                        affected_cnt += dbjob.update_HtTt_wetaxDclrId(ht_info['ht_tt_seq'], matching_data['dclrId'], wetax_paid_yn)
+                    else:
+                        logger.info(f"납부금액에 차이가 있음. {ht_info['holder_nm']} {ht_info['holder_ssn1']} {ht_info['holder_ssn2']} :: 신고={ht_info['wetax_income_tax'] } != 위택스={matching_data['납부금액']}")
             else:
-                print(f"납부금액에 차이가 있음. {ht_info['wetax_income_tax'] } != {matching_data['납부금액']}")
-        else:
-            print(ht_info['ht_tt_seq'], ht_info['holder_nm'], ht_info['holder_ssn1'], ht_info['holder_ssn2'], "NO MATCH ~~~~~~~~~~~~");
+                logger.info(ht_info['ht_tt_seq'], ht_info['holder_nm'], ht_info['holder_ssn1'], ht_info['holder_ssn2'], "NO MATCH ~~~~~~~~~~~~");
+        except Exception as e: 
+            err_cnt += 1
+            logger.error(f"i={err_cnt}, wetax_reg_num = {wetax_reg_num} - error={e}")
 
-    print(f"총 {affected_cnt} 개가 업데이트 됨")
+    logger.info(f"총 {affected_cnt} 개가 업데이트 됨")
 
 conn = dbjob.connect_db()
 main()    

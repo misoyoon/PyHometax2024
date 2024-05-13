@@ -61,11 +61,11 @@ def do_task(driver: WebDriver, verify_stamp):
                 if status_cd == 'SW':
                     dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'SW 신호로 STOP 합니다.')
                     logt('[자동화 진행상태 점검] SW 신호로 STOP 합니다.')
-                break
+                return
         else:
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
             logt('[자동화 진행상태 점검] verify_stamp 변경으로 STOP 합니다.')
-            break
+            return
 
         # 작업자 정보 조회
         user_info = dbjob.get_worker_info(worker_id)
@@ -243,7 +243,7 @@ def do_step1(driver: WebDriver, ht_info):
     work_dir = ht_file.get_work_dir_by_htTtSeq(group_id, ht_tt_seq)
 
     try:
-        ht_sleep(2)
+        ht_sleep(3)
         팝업체크_유무 = sc.move_iframe(driver, 'UTERNAAV52_iframe')
 
         if 팝업체크_유무:
@@ -259,11 +259,14 @@ def do_step1(driver: WebDriver, ht_info):
             driver.find_element(By.ID, 'btnClose2').click()
             ht_sleep(0.3) 
     except Exception as e:
-        logt("iframe 이동 오류: 확인하였습니다.")
+        loge("iframe 이동 오류: 확인하였습니다.")
+        BizNextLoopException("팝업체크_유무", "팝업체크_유무", "S")
 
     # iframe이동 : 메인
     driver.switch_to.default_content()
     sc.move_iframe(driver, 'txppIframe')
+
+
 
     # 주민번호 입력
     holder_ssn1 = ht_info['holder_ssn1']
@@ -284,7 +287,7 @@ def do_step1(driver: WebDriver, ht_info):
     
 
     # 주민번호 확인 => [확인]버튼 클릭
-    logt("주민번호 확인 => [확인]버튼 클릭", 3)
+    logt("주민번호 확인 => [확인]버튼 클릭", 1.5)
     try :
         #driver.find_element(By.ID, 'btnResNo').click()
         driver.execute_script("$('#btnResNo').click();")
@@ -294,7 +297,7 @@ def do_step1(driver: WebDriver, ht_info):
         driver.execute_script("$('#btnResNo').click();")
 
     try:
-        logt("팝업확인", 1)
+        logt("팝업확인", 1.5)
         #alert = driver.switch_to.alert
         alert = driver.switch_to.alert
         alert_msg = alert.text
@@ -316,9 +319,9 @@ def do_step1(driver: WebDriver, ht_info):
         raise BizException("주민번호오류","")
 
     # FIXME 테스트 주석처리
-    logt("Select선택: 국외", 0.5)
+    logt("Select선택: 국외", 1)
     driver.find_element(By.CSS_SELECTOR, '#cmbAbrdAstsYn > option:nth-child(3)').click()
-    logt("Select선택: 국외주식", 0.5)
+    logt("Select선택: 국외주식", 1)
     driver.find_element(By.CSS_SELECTOR, '#cmbTrnRtnDdtClCd > option:nth-child(4)').click()
     
     #logt("Select선택: 2022", 0.5)
@@ -630,7 +633,7 @@ def do_step1(driver: WebDriver, ht_info):
     #sc.set_input_value_by_id(driver, 'edtPmtInsyAdtTxamt', "100000" , '테스트용(삭졔예정)' )
 
     # (홈택스 페이지에 있는) 양도소득금액
-    time.sleep(1)
+    time.sleep(2)
     try:
         # 관리홈피 거래내역 리스트의 총 양도소득금액
         sum_income_amount = dbjob.select_HtTtList_sumIncomeAmount(ht_tt_seq)
@@ -651,7 +654,7 @@ def do_step1(driver: WebDriver, ht_info):
         logt(f"홈택스 신고금액 vs ht_tt_list 합계 금액 비교 중 오류2, {str(e)[:100]}")
 
     if ht_info['other_sec_data'] == 'N' and hometax_total_income_amount != sum_income_amount:
-        raise BizException("거래내역 불일치", f"관리페이지 거래내역리스트와 홈택스 신고된 양도소득금액이 일치하지 않습니다. {hometax_total_income_amount} != {sum_income_amount}")
+        raise BizException("거래내역 불일치", f"seq={ht_tt_seq}, 관리페이지 거래내역리스트와 홈택스 신고된 양도소득금액이 일치하지 않습니다. {hometax_total_income_amount} != {sum_income_amount}")
 
     # 기본공제금액 입력
     if hometax_total_income_amount >= 2_500_000:
@@ -672,7 +675,7 @@ def do_step1(driver: WebDriver, ht_info):
     # (주의)재계산 시간을 벌기 위해 다른 곳에 들렸다가 이동하기 
     #driver.find_element(By.ID, 'edtReTxamt').send_keys("0")   #edtReTxamt: 감면세액
         
-    ht_sleep(0.3)
+    ht_sleep(0.5)
     
     #2024년 신규메시지 등장
     #양도소득금액 + 기신고 · 결정 · 경정된 양도소득금액 합계 - 소득감면대상소득금액 계산된 금액이 0보다 큰 경우에만 기본공제 입력이 가능합니다
@@ -682,7 +685,7 @@ def do_step1(driver: WebDriver, ht_info):
     #     ...
         
 
-    sc.click_button_by_id(driver, 'trigger28', '등록하기', 0.5)
+    sc.click_button_by_id(driver, 'trigger28', '등록하기', 1)
     
     try:
         alert= driver.switch_to.alert
@@ -702,7 +705,7 @@ def do_step1(driver: WebDriver, ht_info):
             else:
                 logt(f"기본공제 : 없음")
             
-            sc.click_button_by_id(driver, 'trigger28', '등록하기', 0.5)
+            sc.click_button_by_id(driver, 'trigger28', '등록하기', 1)
         else:
             alert.accept()  
     except Exception as e:
@@ -776,15 +779,17 @@ def do_step1(driver: WebDriver, ht_info):
     sc.move_iframe(driver, "UTERNAAZ01_iframe") 
 
     # 주민번호 검증
-    tmp_ssn1 = driver.find_element(By.ID, 'textbox902').text[0:6]
-    if holder_ssn1 != tmp_ssn1:
-        raise BizException("주민번호 불일치", f"신고서 제출 후 주민번호 검증 {tmp_ssn1}<-> 현재주민번호{holder_ssn1}")
+    try:
+        tmp_ssn1 = driver.find_element(By.ID, 'textbox902').text[0:6]
+        if holder_ssn1 != tmp_ssn1:
+            raise BizException("주민번호 불일치", f"신고서 제출 후 주민번호 검증 {tmp_ssn1}<-> 현재주민번호{holder_ssn1}")
 
-    # 홈택스 접수번호 저장
-    홈택스접수번호 = driver.find_element(By.ID, 'textbox893').text
-    logt(f'홈택스접수번호={홈택스접수번호}')
-    dbjob.update_HtTt_hometaxRegNum(ht_tt_seq, 홈택스접수번호)
-
+        # 홈택스 접수번호 저장
+        홈택스접수번호 = driver.find_element(By.ID, 'textbox893').text
+        logt(f'홈택스접수번호={홈택스접수번호}')
+        dbjob.update_HtTt_hometaxRegNum(ht_tt_seq, 홈택스접수번호)
+    except:
+        loge("주민번호, 홈택스접수번호 점검 중 오류 발생")
 
     #logt("팝업체크박스 체크 : 확인하였습니다.", 1)
     #driver.find_element(By.ID, 'checkbox2_input_0').click()

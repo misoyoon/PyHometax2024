@@ -68,9 +68,10 @@ def do_task(driver: WebDriver, verify_stamp):
                 logt(f'Agent Check : Status={status_cd} ==> 작업 중지')
                 if status_cd == 'SW':
                     dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'SW 신호로 STOP 합니다.')
-                break
+                return
         else:
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
+            return
             
         # 작업자 정보 조회
         user_info = dbjob.get_worker_info(worker_id)
@@ -187,7 +188,7 @@ def file_download(ht_info, v_file_type):
         pyautogui.press('enter')
 
     # 팝업: 다른이름으로 저장 
-    logt(f"파일타입={v_file_type}, 파일 경로 쓰기 = {fullpath}", 1)    
+    logt(f"파일타입={v_file_type}, 파일 경로 쓰기 = {fullpath}", 2)    
     pyautogui.typewrite(fullpath)
     ht_sleep(2)
     pyautogui.press('enter')   # 저장하기 위해 파일경로 넣고 엔터치기         
@@ -515,21 +516,17 @@ def do_step2_loop(driver: WebDriver, ht_info):
             driver.switch_to.frame("txppIframe")
 
             납부여부 = ''
-            try :
-                # Y,N인 경우는 아래 A태그 있음, '-' A태그 없음
-                ele = driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_38 > span")  
-                납부여부 = ele.text
-                logt(f"납부여부 ====> [{납부여부}]")
-                if 납부여부 == 'Y':
-                    dbjob.update_htTt_hometaxPaidYn(ht_tt_seq, 'Y')
-                    BizNextLoopException("납부", "납부완료", "S")
-                elif 납부여부 == '-':
-                    BizNextLoopException("납부서 없음", "", "S")
+            # Y,N인 경우는 아래 A태그 있음, '-' A태그 없음
+            ele = driver.find_element(By.CSS_SELECTOR, "#ttirnam101DVOListDes_cell_0_38 > span")  
+            납부여부 = ele.text
+            logt(f"납부여부 ====> [{납부여부}]")
+            if 납부여부 == 'Y':
+                dbjob.update_htTt_hometaxPaidYn(ht_tt_seq, 'Y')
+                raise BizNextLoopException("납부", "납부완료", "S")
+            elif 납부여부 == '-':
+                logt(f"납부서 없음 !!")
+                raise BizNextLoopException("납부", "납부서 없음", "S")
                 
-            except Exception as e:
-                logt(f"납부여부 확인 중 오류 발생 : {str(e)[:100]}")
-                raise BizException("납부여부 확인오류", f"#ttirnam101DVOListDes_cell_0_38 읽기오류")
-
             # 주의) 납부서가 없을 수 있음
             납부서_버튼_text = ''
             try :

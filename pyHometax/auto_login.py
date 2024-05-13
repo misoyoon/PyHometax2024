@@ -44,18 +44,30 @@ def init_selenium() -> WebDriver:
     #logt("크롬드라이버 위치=%s" % chromedriver_path)
 
     try:
-        chrome_options = Options()
-        
+        options = Options()
+        options.add_argument("--user-agent=user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36")
+        options.add_argument("--Sec-Fetch-Site=same-origin")
+        options.add_argument('--disable-blink-features=AutomationControlle')
+
+        options.add_argument("--disable-extensions")  # 확장 프로그램 비활성화
+        options.add_argument("--disable-infobars")    # 정보바 비활성화
+        options.add_argument("--disable-popup-blocking")  # 팝업 차단기 비활성화
+        options.add_experimental_option("prefs", {"credentials_enable_service": False, "profile.password_manager_enabled": False})  # 자격 증명 저장 비활성화
+
+        #options.add_argument('--headless')
+
         #드라이버 생성을 특정함수 안에서 하게 되면 함수가 종료될때 브라우저도 같이 종료
-        chrome_options.add_experimental_option("detach", False)
+        options.add_experimental_option("detach", False)
         
         # Chrome이 자동화된 테스트 소프트웨어에 의해 제어되고 있습니다. -> 없애기
-        #chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
         
         # 1.크롬접속
         #driver = webdriver.Chrome(chromedriver_path)
         #chromedriver_autoinstaller.install()
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(options=options)
 
         # 브라우저 위치 조정하기
         driver.set_window_position(0,0)

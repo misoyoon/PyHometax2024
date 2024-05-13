@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+from selenium.common.exceptions import NoSuchElementException
 
 import pyautogui
 #import shutil
@@ -33,7 +34,7 @@ AU_X = '3'
 
 
 def do_task(driver: WebDriver, user_info, verify_stamp):
-
+    연속실패건수 = 0
     job_cnt = 0
     while True:
         job_cnt += 1
@@ -79,6 +80,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         else:
             logt("verify_stamp 변경으로 STOP 합니다.")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
+            return
             
                             
         # 홈택스 신고서제출 자료            
@@ -150,13 +152,13 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 pass
             
 
-            for i in range(10):
+            for i in range(20):
                 try:
                     신고인 = driver.find_element(By.CSS_SELECTOR, '#dclrRlpNm').text
                     if 신고인 == '세무법인 더원':
                         break
                 except:
-                    logt("신고인 정보 노출 대기 중...")
+                    logt(f"신고인 정보 노출 대기 중...  {i}")
                 time.sleep(1)
             
             # 납세자 조회
@@ -175,7 +177,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 검색결과수 = driver.find_element(By.ID, "spnTotCnt").text
                 logt(f"위임자목록 조회 결과 = {검색결과수}")
                 if int(검색결과수) > 0: break
-                time.sleep(0.5)
+                time.sleep(1)
 
 
             logt("[주민번호 입력 대기]", 0.5)
@@ -223,10 +225,28 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 # 에러처리하지 않고 성공처리하기, 다만 au_history에 이력 남기기
                 # dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"양도인명불일치 : DB={ht_info['holder_nm']}, 위택스={양도인명}")
             
-            
+            #국적선택
             # [다음] 버튼 클릭
             driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
-            sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')
+            ret = sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')
+            if ret == 'ALERT_ERROR':
+                logt("국적 선택 필요")
+
+                driver.find_element(By.CSS_SELECTOR, '#btnTrnrNtnSrch').click()
+                time.sleep(0.5)
+                driver.find_element(By.CSS_SELECTOR, '#ntnNm').send_keys('대한민국')
+                time.sleep(0.5)
+                driver.find_element(By.CSS_SELECTOR, '#btnNationSrh').click()
+                time.sleep(0.5)
+                driver.execute_script("$('#rdo_nat_1').prop('checked', true)")
+                time.sleep(0.5)
+                driver.find_element(By.CSS_SELECTOR, '#btnNationSel').click()
+                time.sleep(0.5)
+                
+
+                driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
+                ret = sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')
+
             time.sleep(1)
             
             # ------------------------------------------------
@@ -256,7 +276,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             
             # 팝업 DIV - 검색버튼
             driver.find_element(By.CSS_SELECTOR, "#btnSchHomeTax").click()
-            time.sleep(1)
+            time.sleep(1.5)
             
             홈택스_접수번호 = ht_info['hometax_reg_num']
             if 홈택스_접수번호: 홈택스_접수번호 = 홈택스_접수번호.replace('-', '')
@@ -269,11 +289,18 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 trs = driver.find_elements(By.CSS_SELECTOR, "#tbl_homeTaxList > tbody > tr")
                 for idx, tr in enumerate(trs, 0):
                     tds = tr.find_elements(By.CSS_SELECTOR, "td")
-                    td2_text = tds[1].text
-                    if td2_text == 홈택스_접수번호:
+                    td2_text = tds[1].text  #홈택스 접수번호
+                    td4_text = tds[4].text
+                    if td2_text == 홈택스_접수번호: # or (ht_info['data_type'] == 'SEMI'):
                         driver.find_element(By.CSS_SELECTOR, f"label[for='chkItem_{idx}']").click()
                         driver.find_element(By.CSS_SELECTOR, "#btnHomeSel").click() # [선택]
                         is_found = True
+
+                        # 여기서 SEMI 업데이트 하면 암됨!!!
+                        # 반자동 신고된 홈택스 접수번호 업데이트
+                        #if not 홈택스_접수번호 or (ht_info['data_type'] == 'SEMI'):
+                        #    dbjob.update_HtTt_hometaxRegNum(ht_tt_seq, td2_text)
+
                         break
                 
             if not is_found:
@@ -290,29 +317,55 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             
             time.sleep(0.5)
 
-            #법정동 마지막 항목 선택하기
-            try:
-                # 셀렉트 요소 찾기
-                select_box = None
-                관할지_동 = ""
-                try:
-                    select_box = Select(driver.find_element(By.ID, "sel_jrsLgvCdDong"))
-                    관할지_동 = select_box.first_selected_option.text
-                    logt(f"관할지_동 : [{관할지_동}]")
-                except:
-                    sc.set_select_by_option_index(driver, 'sel_jrsLgvCdDong', 2, '관할지_동', 0)
-                    관할지_동 = select_box.first_selected_option.text
-                    dbjob.append_HtTt_remark(ht_tt_seq, f'위택스_신고시_법정동_임의선택 => [{관할지_동}]' )
-                    logt(f"관할지_동 : [{관할지_동}]  <=== 위택스_신고시_법정동_임의선택")
-            except Exception as e:
-                loge(f'{str(e)[:100]}')
 
-                
-            
+            주소 = driver.find_element(By.CSS_SELECTOR, "#txpAllAddr").get_attribute("value")
+            try:
+                # select_sido 선택 요소 가져오기
+                select_sido = Select(driver.find_element(By.ID, "sel_jrsLgvCdSido"))
+                # 현재 선택된 옵션 가져오기
+                selected_option = select_sido.first_selected_option
+                # 옵션의 value 및 text 값 가져오기
+                selected_value = selected_option.get_attribute("value")
+                selected_text = selected_option.text
+
+                print("법정동 시도 선택 value:", selected_value)
+                print("법정동 시도 선택 value:", selected_text)
+            except NoSuchElementException:
+                print("법정동 시도 선택 없음")
+                if 주소.find('세종') >= 0:
+                    select_sido.select_by_visible_text("세종특별자치시")
+                    time.sleep(1)
+                else:
+                    dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"법정동 오류, 시도: {주소}단계")
+                    continue
+
+            #법정동 마지막 항목 선택하기
+            # 셀렉트 요소 찾기
+            select_box = None
+            관할지_동 = ""
+            try:
+                select_box = Select(driver.find_element(By.ID, "sel_jrsLgvCdDong"))
+                관할지_동 = select_box.first_selected_option.text
+                logt(f"관할지_동 : [{관할지_동}]")
+            except NoSuchElementException:
+                sc.set_select_by_option_index(driver, 'sel_jrsLgvCdDong', 2, '관할지_동', 0)
+                관할지_동 = select_box.first_selected_option.text
+                dbjob.append_HtTt_remark(ht_tt_seq, f'위택스_신고시_법정동_임의선택 => [{관할지_동}]' )
+                logt(f"관할지_동 : [{관할지_동}]  <=== 위택스_신고시_법정동_임의선택")
+
+
             # [다음] 버튼 클릭
             driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
-            sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')
-            
+            ret = sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')
+            try:
+                if ret == 'ALERT_ERROR':
+                    logt("행정동 선택 필요")
+                    driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
+                    ret = sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')            
+            except:
+                logt("행정동 선택 패스")
+
+            time.sleep(1)
             # ------------------------------------------------
             logt("##### 3.신고세액", 다음버튼_대기시간)
             if check_report_step(driver, ht_tt_seq, worker_id, au_x, auto_manager_id, 3) == False : continue
@@ -371,13 +424,14 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             # ------------------------------------------------
 
             # 동의합니다. [주의] 해당 체크박스는 기존방식의 .click()로 클릭이 잘 안됨 (스크롤 등의 이유로)
-            driver.execute_script("$('#terms_agree_one01').prop('checked', true)");
+            driver.execute_script("$('#terms_agree_one01').prop('checked', true)")
             
             # [미리보기] 눌러 신고 및 납부계산서 미리보기 화면 캡쳐 저장여부 나중에 판단하기
             #driver.find_element(By.CSS_SELECTOR, '#btnPrvw').click()
             
-            # TODO 아래 부분 주석 풀기
-            # [제출]
+            # TODO 아래 부분 주석                   풀기
+            # [제출]                ㅏㅏ너ㅜㄴ1203!     
+
             driver.find_element(By.CSS_SELECTOR, '#btnSbmsn').click()
             sc.click_alert(driver, '양도소득분 신고서을(를) 제출 하시겠습니까?')
 
@@ -411,10 +465,15 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             #         dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S')
             
         except Exception as e:
+            연속실패건수 += 1
             loge(f'{str(e)[:100]}')
             #traceback.print_exc()
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"{str(e)[:100]}")
+            if 연속실패건수>3:
+                dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'연속3회에러 : {str(e)[:100]}')
+                break
         else : # 오류가 없을 경우만 실행
+            연속실패건수 = 0
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', None)
             logt("####### 1건 처리 완료 #######")     
 

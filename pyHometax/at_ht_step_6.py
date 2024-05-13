@@ -11,7 +11,7 @@ from pdfminer.layout import LTTextContainer
 import config
 from common import *
 import dbjob
-import pyHometax.common_sele as sc
+import common_sele as sc
 import ht_file
 
 # --------------------------------------------
@@ -40,54 +40,15 @@ import sample.sendATS_info_the1 as sendATS_info_the1
 from popbill import KakaoService, PopbillException
 
 
-pdf_check_info = {
-        'result1' : [ # 1_홈택스_신고서
-                {'x': 199, 'y': 699, 'is_set':False, 'val': '', 'title':'성명',         'filter':''},
-                {'x': 241, 'y': 682, 'is_set':False, 'val': '', 'title':'주소',         'filter':'성명전 자 우 편소주소'},
-                {'x': 208, 'y': 590, 'is_set':False, 'val': '', 'title':'양도소득금액', 'filter':','}
-            ],
-        'result2' : [ # 2_홈택스_계산명세서
-                {'x': 193, 'y': 186, 'is_set':False, 'val': '', 'title':'양도소득금액', 'filter':','}
-            ],
-        'result3' : [ # 3_홈택스_접수증
-                {'x': 148, 'y': 559, 'is_set':False, 'val': '', 'title':'성명',                 'filter':''},
-                {'x': 198, 'y': 629, 'is_set':False, 'val': '', 'title':'접수번호',             'filter':''},
-                {'x': 523, 'y': 378, 'is_set':False, 'val': '', 'title':'양도소득세_과세표준',  'filter':''},
-            ],
-        'result4' : [ # 4_홈택스_납부서
-                {'x': 205, 'y': 637, 'is_set':False, 'val': '', 'title':'양도세액', 'filter':' '},  # filter ' ' 공백에 주의할것, text결과값에서 space 제거하기 위해
-                {'x': 84 , 'y': 711, 'is_set':False, 'val': '', 'title':'성명',     'filter':''},
-                {'x': 162, 'y': 688, 'is_set':False, 'val': '', 'title':'주소',     'filter':''},
-                {'x': 324, 'y': 594, 'is_set':False, 'val': '', 'title':'국세계좌', 'filter':' '}, # "국세계좌,KEB,국민"중 하나로 판단, 깨끗한 결과가 나오지 않음, 존재여부만 확인
-                {'x': 493, 'y': 600,  'is_set':False, 'val': '', 'title':'이체계좌','filter':' '},  # "기업,신한,우리" 중 하나로 판단, 깨끗한 결과가 나오지 않음, 존재여부만 확인
-            ],
-        'result8' : [ # 8_홈택스_납부서2 (분납)
-                {'x': 205, 'y': 637, 'is_set':False, 'val': '', 'title':'양도세액', 'filter':' '},  # filter ' ' 공백에 주의할것, text결과값에서 space 제거하기 위해
-                {'x': 84 , 'y': 711, 'is_set':False, 'val': '', 'title':'성명',     'filter':''},
-                {'x': 162, 'y': 688, 'is_set':False, 'val': '', 'title':'주소',     'filter':''},
-                {'x': 324, 'y': 594, 'is_set':False, 'val': '', 'title':'국세계좌', 'filter':' '}, # "국세계좌,KEB,국민"중 하나로 판단, 깨끗한 결과가 나오지 않음, 존재여부만 확인
-                {'x': 493, 'y': 600,  'is_set':False, 'val': '', 'title':'이체계좌','filter':' '},  # "기업,신한,우리" 중 하나로 판단, 깨끗한 결과가 나오지 않음, 존재여부만 확인
-            ],
-        'result5' : [ # 5_위택스_납부서
-                {'x': 259, 'y': 712, 'is_set':False, 'val': '', 'title':'성명',     'filter':''},
-                {'x': 213, 'y': 463, 'is_set':False, 'val': '', 'title':'납부세액', 'filter':','},
-                {'x': 267, 'y': 186, 'is_set':False, 'val': '', 'title':'은행명',   'filter':''},  # 10글자(전국공통(지방세입)) 넘으면 가상계좌가 있는 것으로 판단
-                {'x': 441, 'y': 186, 'is_set':False, 'val': '', 'title':'계좌번호', 'filter':''} # 25글자(41463-1-95-24-4-0003813-1) 넘으면 가상계좌가 있는 것으로 판단
-            ],
-        # '' : [ # 6_위택스_신고서
-        #         {'x': 317, 'y': 704, 'is_set':False, 'val': '', 'title':'성명', 'filter':'성    명'}, # 깨끗하게 이름만 나오지 않음
-        #         {'x': 213, 'y': 421, 'is_set':False, 'val': '', 'title':'납부세액', 'filter':','},
-        #         {'x': 182, 'y': 671, 'is_set':False, 'val': '', 'title':'주소1', 'filter':'전자우편주    소주    소'}, # 주소가 한번에 나오지 않고 일부만 나옴
-        #     ],
-    }
-
 # -------------------------------------------------------------
 # (중요 공통) 아래의 모듈에서 step별 공통 기본 동작 실행
 # -------------------------------------------------------------
-import pyHometax.common_at_ht_step as step_common
-group_id = step_common.group_id
+import common_at_ht_step as step_common
 auto_manager_id = step_common.auto_manager_id
-conn = step_common.conn                 
+conn = step_common.conn
+AU_X = '6'
+(driver, user_info, verify_stamp) = step_common.init_step_job()
+group_id = 'the1'
 # -------------------------------------------------------------
 
 
@@ -134,7 +95,7 @@ def do_task(auto_manager_id, group_id):
         else:
             logt("verify_stamp 변경으로 STOP 합니다.")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
-            
+            return
 
         # 고객 통보 자료 가져오기 (6단계)
         ht_info = dbjob.select_next_au6(group_id, worker_id, seq_where_start, seq_where_end)
@@ -166,28 +127,25 @@ def do_task(auto_manager_id, group_id):
         #base_dir = ht_file.get_root_dir(group_id)
         #pdf_file = ht_file.get_dir_by_htTtSeq(group_id, ht_tt_seq)
         
+        PDF_병합_성공 = False
+        메일_발송_성공 = False
+        문자_발송_성공 = False
+
         try:
             # --------------------------------------------------------------
             # PDF 병합
             # --------------------------------------------------------------
+            #merged_pdf_filename = f'2023_the1_{ht_tt_seq}.pdf'
             merged_pdf_filename = f'2023년_해외주식_양도소득세_{ht_tt_seq}.pdf'
             (is_success, merged_pdf_path) = merge_pdf(ht_info, merged_pdf_filename)
-            if not is_success:
+            if is_success:
+                logt(f"PDF병합 ==> 성공")
+                PDF_병합_성공 = True
+            else:
                 e = merged_pdf_path  # 실패의 경우 Exception이 넘어옴
-                dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f'통합PDF생성 오류:{e}')
-                continue
 
-
-            # --------------------------------------------------------------
-            # 카카오 알림톡 발송
-            # --------------------------------------------------------------
-            if notify_type_cd.find('EMAIL') >= 0:  # 고객 이메일 발송만 카카오 알림톡 발송
-                (is_success, result) = send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_NOTAX_EMAIL)
-                if is_success:
-                    dbjob.insert_smsHistory(result)
-                else:
-                    dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f'KAKAO 알림톡 오류={result}')
-                    continue
+                loge(f"PDF병합오류 : {e}")
+                raise Exception(f"PDF병합오류:{e}")
 
 
             # --------------------------------------------------------------
@@ -197,17 +155,38 @@ def do_task(auto_manager_id, group_id):
             if notify_type_cd.find('EMAIL') >= 0:  
                 (is_success, result) = send_mail(merged_pdf_path, merged_pdf_filename, ht_info, worker_info)
                 if is_success:
+                    logt(f"메일 발송 ==> 성공")
+                    dbjob.insert_smsHistory(result)
+                    메일_발송_성공 = True
+                else:
+                    #dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f'EMAIL 발송 오류={result}')
+                    #continue
+                    loge(f"메일 발송 오류 : {result}")
+                    raise Exception("메일발송오류")
+            
+
+            # --------------------------------------------------------------
+            # 카카오 알림톡 발송
+            # --------------------------------------------------------------
+            if notify_type_cd.find('EMAIL') >= 0:  # 고객 이메일 발송만 카카오 알림톡 발송
+                (is_success, result) = send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_NOTAX_EMAIL)
+                if is_success:
+                    logt(f"일림톡 발송 ==> 성공")
+                    문자_발송_성공 = True
                     dbjob.insert_smsHistory(result)
                 else:
-                    dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f'EMAIL 발송 오류={result}')
-                    continue
-            
+                    loge(f"알림톡 발송 오류 : {result}")
+                    raise Exception("알림톡발송오류")
+
         except Exception as e:
-            print(e)
+            logt(e)
             dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'E', f'{e}')
+            dbjob.update_autoManager_statusCd(auto_manager_id, 'F', f'{e}')
+            break
         else :
             dbjob.update_HtTt_AuX(au_x, ht_tt_seq, 'S')
-            print("======> 1건 정상처리")
+            logt("======> 1건 정상처리")
+            time.sleep(2)
 
 # 카카오 알림톡 발송
 def send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_NOTAX_EMAIL):
@@ -223,7 +202,7 @@ def send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_
     template_info = kakao_TAX_EMAIL if hometax_income_tax > 10 else kakao_NOTAX_EMAIL
     
     try:
-        print("알림톡 단건 전송 " + "="*15)
+        logt("알림톡 단건 전송 " + "="*15)
 
         # 팝빌회원 사업자번호("-"제외 10자리)
         CorpNum = group_info['biz_num']  # 팝빌회원 사업자번호
@@ -241,7 +220,10 @@ def send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_
         # 사전에 승인된 템플릿의 내용과 알림톡 전송내용(content)이 다를 경우 전송실패 처리됩니다.
         content = template_info['content']
         content = content.replace('#{고객명}',       ht_info['holder_nm'])
-        content = content.replace('#{고객이메일}',   ht_info['holder_email'])
+        if ht_info['notify_type_cd'] == 'EMAIL_SEC':
+            content = content.replace('#{고객이메일}',   ht_info['sec_email'])
+        else:
+            content = content.replace('#{고객이메일}',   ht_info['holder_email'])
         content = content.replace('#{담당자연락처}', worker_info['tel'])
         content = content.replace('#{담당자명}',     worker_info['name'])
 
@@ -301,7 +283,7 @@ def send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_
                 btns,
                 altSubject,
             )
-        print("접수번호 (receiptNum) : %s" % receiptNum)
+        logt("접수번호 (receiptNum) : %s" % receiptNum)
 
         sms_history = {
             'group_id' : ht_info['group_id'],
@@ -322,7 +304,7 @@ def send_kakao_message(ht_info, worker_info, group_info, kakao_TAX_EMAIL, kakao_
         
         return True, sms_history
     except PopbillException as pe:
-        print("Exception Occur : [%d] %s" % (pe.code, pe.message))
+        logt("Exception Occur : [%d] %s" % (pe.code, pe.message))
         return False, pe
 
 # 문서 파일을 하나의 PDF로 병합하기
@@ -335,7 +317,7 @@ def merge_pdf(ht_info, merged_pdf_filename):
     merged_pdf_path = f'{work_dir}{merged_pdf_filename}'
     
     if os.path.exists(merged_pdf_path) and os.path.isfile(merged_pdf_path):
-        print(f"통합PDF 파일삭제(재작업준비): {merged_pdf_path}")
+        logt(f"통합PDF 파일삭제(재작업준비): {merged_pdf_path}")
         os.remove(merged_pdf_path)
 
     try:
@@ -359,41 +341,51 @@ def merge_pdf(ht_info, merged_pdf_filename):
         #     pdf_list.append(base_dir + row['result5'])
             
         
-        print(f"통합PDF 생성 : {merged_pdf_path}")
+        logt(f"통합PDF 생성 : {merged_pdf_path}")
         pdfWriter = PyPDF2.PdfWriter()
         for result_x in file_list:
             if row[result_x]:
                 pdf_path = base_dir + row[result_x]
                 if os.path.exists(pdf_path):
-                    fn_pdf_내용분석(pdf_path, result_x)
-                
-                    #print(f"   통합할 PDF : {pdf_path}")
+                    logt(f"   통합할 PDF : {pdf_path}")
                     with open(pdf_path, 'rb') as pdfFile:
                         pdfReader = PyPDF2.PdfReader(pdfFile)
                         for pdf_page in pdfReader.pages:
                             pdfWriter.add_page(pdf_page)
-
+                else:
+                    err = f"통합 PDF 파일 없음 : {pdf_path}"
+                    loge(err)
+                    return False, err
 
         pdfWriter.encrypt(ht_info['holder_ssn1'])
         with open(merged_pdf_path, 'wb') as resultPdf:
             pdfWriter.write(resultPdf)
 
+        if os.path.exists(merged_pdf_path) and os.path.isfile(merged_pdf_path):
+            ...  #정상 확인
+        else:
+            err = f"통합PDF 생성 확인불가: {merged_pdf_path}"
+            loge(err)
+            return False, err            
 
         return True, merged_pdf_path
     except Exception as e:
-        print(f'통합PDF 생성 오류 : {e}')
+        logt(f'통합PDF 생성 오류 : {e}')
         return False, e
     
+
 # 메일 내용 템블릿 읽기    
 def read_mail_template(group_id, mail_type):
-    file_path = f'{os.getcwd()}\\pyHometax\\mail_template\\{group_id}\\mail_{mail_type}_2024.html'
-    print(file_path)
+    file_path = f'{os.getcwd()}\\pyHometax\\mail_template\\{group_id}\\mail_{mail_type}_2023.html'
+    logt(file_path)
     with open(file_path, 'r', encoding="utf-8") as f:
         data = f.read()
-        #print(data)
+        #logt(data)
         f.close()
         return data
     return None
+
+
 
 def send_mail(attach_file_path, attach_filename, ht_info, worker_info):
     #EMAIL_ADDR = 'the1tax_1@the1kks.com'
@@ -406,13 +398,14 @@ def send_mail(attach_file_path, attach_filename, ht_info, worker_info):
 
     hometax_income_tax = ht_info.get('hometax_income_tax', 0)  # 10원보다 크면 세금이 있는 상태
     
-    type = 'tax' if hometax_income_tax > 10 else 'notax'
+    type = 'tax' if hometax_income_tax >= 10 else 'notax'
     content = read_mail_template(group_id, type)
     content = content.replace("<<고객>>",     ht_info['holder_nm'])
     content = content.replace("<<전화번호>>", worker_info['tel'])
     content = content.replace("<<담당자>>",   worker_info['name'])
 
-    from_addr = worker_info['email']
+    #from_addr = worker_info['email']
+    from_addr = "no-reply@the1kks.com"
     
     # 받는 사람 email => EMAIL, EMAIL_SEC 두개의 경우 존재
     to_addr = ht_info['holder_email'] 
@@ -437,7 +430,7 @@ def send_mail(attach_file_path, attach_filename, ht_info, worker_info):
         message["Subject"] = Header(s=title, charset='utf-8')
         message["From"] = from_addr  #보내는 사람의 이메일 계정
         message["To"]   = to_addr
-        message["Cc"]   = from_addr
+        message["Cc"]   = "info@the1kks.com"
         if bcc_addr:
             message["Bcc"] = bcc_addr
 
@@ -482,101 +475,14 @@ def send_mail(attach_file_path, attach_filename, ht_info, worker_info):
 
         return True, sms_history
     except Exception as e:
-        print(f'메일 발송 오류 : {e}')
+        logt(f'메일 발송 오류 : {e}')
         return False, e
-
-
-
-
-def fn_pdf_내용분석2(pdf_page, pdf_type_name):
-    isFound = False
-    for element in pdf_page:
-        if isinstance(element, LTTextContainer):
-            try:
-                text = element.get_text().strip().replace('\n', '')
-                cur_x1 = round(element.x0)
-                cur_x2 = round(element.x1)
-                cur_y1 = round(element.y0)
-                cur_y2 = round(element.y1)
-                #print(f'{text} ==>  {cur_x1},{cur_x2},{cur_y1},{cur_y2} => ( {(cur_x1+cur_x2)/2}, {(cur_y1+cur_y2)/2} )')
-                
-                #if (op.text=='성명' and text == '이지수') or (op.text=='주민번호' and text == '821111-2069016'):
-                #    print(f'찾는 단어를 찾았음 : {op.text} => {text}')
-
-                for op in pdf_check_info[pdf_type_name]:
-                    if op['is_set']: continue
-                    
-                    if cur_x1 <= op['x'] and op['x'] <= cur_x2 and cur_y1 <= op['y'] and op['y'] <= cur_y2 :
-                        op['is_set'] = True
-                        if op['filter']:
-                            op['val'] = text.replace(op['filter'], '').strip()
-                        else:
-                            op['val'] = text
-                            
-                
-                
-                if text.replace(' ', '').find("143127") >=0 :
-                    print(f'{text} ==>  {cur_x1},{cur_x2},{cur_y1},{cur_y2} => ( {(cur_x1+cur_x2)/2}, {(cur_y1+cur_y2)/2} )')
-
-            except Exception as e:
-                print(f'### ERROR ###  Except: 검색오류 : {e} => {element}')    
-
-
-        
-    for op in pdf_check_info[pdf_type_name]:            
-        print(f"{pdf_type_name} : {op['title']} : {op['is_set']} => [{op['val']}]")
-
-
-
-def fn_pdf_내용분석(pdf_file, pdf_type_name, page=1):
-    for pdf_page in extract_pages(pdf_file):
-        isFound = False
-        cur_page = pdf_page.pageid
-
-        #특정 페이지에서만 검색
-        if page > 0 and page != cur_page : continue
-    
-        for element in pdf_page:
-            if isinstance(element, LTTextContainer):
-                try:
-                    text = element.get_text().strip().replace('\n', '')
-                    cur_x1 = round(element.x0)
-                    cur_x2 = round(element.x1)
-                    cur_y1 = round(element.y0)
-                    cur_y2 = round(element.y1)
-                    #print(f'{text} ==>  {cur_x1},{cur_x2},{cur_y1},{cur_y2} => ( {(cur_x1+cur_x2)/2}, {(cur_y1+cur_y2)/2} )')
-                    
-                    #if (op.text=='성명' and text == '이지수') or (op.text=='주민번호' and text == '821111-2069016'):
-                    #    print(f'찾는 단어를 찾았음 : {op.text} => {text}')
-
-                    for op in pdf_check_info[pdf_type_name]:
-                        if op['is_set']: continue
-                        
-                        if cur_x1 <= op['x'] and op['x'] <= cur_x2 and cur_y1 <= op['y'] and op['y'] <= cur_y2 :
-                            op['is_set'] = True
-                            if op['filter']:
-                                op['val'] = text.replace(op['filter'], '').strip()
-                            else:
-                                op['val'] = text
-                                
-                    
-                    
-                    if text.replace(' ', '').find("143127") >=0 :
-                        print(f'{text} ==>  {cur_x1},{cur_x2},{cur_y1},{cur_y2} => ( {(cur_x1+cur_x2)/2}, {(cur_y1+cur_y2)/2} )')
-
-                except Exception as e:
-                    print(f'### ERROR ###  Except: 검색오류 : {e} => {element}')    
-
-        if isFound: break
-        
-    for op in pdf_check_info[pdf_type_name]:            
-        print(f"{pdf_type_name} : {op['title']} : {op['is_set']} => [{op['val']}]")
 
 
 if __name__ == '__main__':
     do_task(auto_manager_id, group_id) 
         
-    print("프로그램 종료")
+    logt("프로그램 종료")
 
     if conn: 
         conn.close()

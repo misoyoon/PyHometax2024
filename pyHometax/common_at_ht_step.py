@@ -20,6 +20,7 @@ agent_id = sys.argv[2]      # A01
 group_id = sys.argv[3]      # the1
 auto_manager_id = server_id + '_' + agent_id + '_' + group_id   # S1_A01_the1
 
+print("auto_manager_id = " + auto_manager_id)
 
 # DB 접속
 conn = dbjob.connect_db()
@@ -31,9 +32,11 @@ current_time = datetime.now()
 now = current_time.strftime("%Y%m%d_%H%M%S")
 
 # 로그 폴더 생성
+print("폴더 생성 확인 = " + f"{config.AUTO_STEP_LOG_DIR}/{auto_manager_id}")
 os.makedirs(f"{config.AUTO_STEP_LOG_DIR}/{auto_manager_id}", exist_ok=True)
 
 log_filename = f"{config.AUTO_STEP_LOG_DIR}/{auto_manager_id}/{auto_manager_id}_{at_info['verify_stamp']}.log"
+print(f"Log File={log_filename}")
 logger = set_logger(log_filename)    # common.py 파일에 있음
 
 
@@ -71,6 +74,10 @@ def init_step_job():
         ht_info = dbjob.select_next_au4(group_id, worker_id, seq_where_start, seq_where_end)
     elif au_x == '5':
         ht_info = dbjob.select_next_au5(group_id, worker_id, seq_where_start, seq_where_end)
+    elif au_x == '6':
+        ht_info = dbjob.select_next_au6(group_id, worker_id, seq_where_start, seq_where_end)
+    elif au_x == '7':
+        ht_info = dbjob.select_next_au7(group_id, worker_id, seq_where_start, seq_where_end)
         
     if not ht_info:
         logt(f"처리할 자료가 없어서 FINISH 합니다. AUX={au_x}")
@@ -79,9 +86,10 @@ def init_step_job():
         
 
     # 셀레니움 초기화
-    driver = auto_login.init_selenium()
+    driver = None
 
     if au_x == '1' or au_x == '2' or au_x == '5':
+        driver = auto_login.init_selenium()
         # ----------------------------------------------------------------------------
         # 자동로그인 처리 (홈택스)
         # ----------------------------------------------------------------------------
@@ -99,8 +107,10 @@ def init_step_job():
             cookie_TEHTsessionID = get_cookie_value(driver, 'TEHTsessionID')
             dbjob.update_user_hometax_cookie(worker_id, cookie_TXPPsessionID, cookie_TEHTsessionID)
         
+        sc.close_other_windows(driver)
         logt("홈택스 로그인 완료 : %s (%s)" % (worker_id, worker_nm), 1)
     elif au_x == '3' or au_x == '4':
+        driver = auto_login.init_selenium()
         # ----------------------------------------------------------------------------
         # 자동로그인 처리 (위택스)
         # ----------------------------------------------------------------------------        
@@ -115,6 +125,7 @@ def init_step_job():
             # input 태그가 존재하지 않을 경우 pass
             pass
 
+        sc.close_other_windows(driver)
 
     logt(f"해외주식 양도소득세 자동신고 기동 : {au_x}단계")
 
@@ -122,6 +133,6 @@ def init_step_job():
     logt("# 담당자 작업 정보 : GROUP_ID=%s, ID=%s, Name=%s" % (group_id, worker_id, worker_nm))
     logt("# ------------------------------------------------------------------")
         
-    sc.close_other_windows(driver)
+    
     return (driver, user_info, verify_stamp)
     

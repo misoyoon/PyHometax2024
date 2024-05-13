@@ -79,7 +79,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         else:
             logt("verify_stamp 변경으로 STOP 합니다.")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'S', 'verify_stamp 변경으로 STOP 합니다.')
-            
+            return
                             
         # 홈택스 신고서제출 자료            
         ht_info = dbjob.select_next_au3(group_id, worker_id, seq_where_start, seq_where_end)

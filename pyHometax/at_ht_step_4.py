@@ -34,6 +34,7 @@ AU_X = '4'
 
 def do_task(driver: WebDriver, user_info, verify_stamp):
     job_cnt = 0
+    연속실패건수 = 0
     while True:
         job_cnt += 1
 
@@ -83,14 +84,14 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         # 작업 대상
         ht_info = dbjob.select_next_au4(group_id, worker_id, seq_where_start, seq_where_end)
 
-        logt("******************************************************************************************************************")
-        logt("4단계 : JOB_COUNT=%s : HT_TT_SEQ=%d, 양도인=%s, SSN=%s-%s" % (job_cnt, ht_info['ht_tt_seq'], ht_info['holder_nm'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
-        logt("******************************************************************************************************************")
-
         if not ht_info:
             logt("처리할 자료가 없어서 FINISH 합니다. ==> 작업 중지")
             dbjob.update_autoManager_statusCd(auto_manager_id, 'F', '처리할 자료가 없어서 FINISH 합니다.')
             return
+
+        logt("******************************************************************************************************************")
+        logt("4단계 : JOB_COUNT=%s : HT_TT_SEQ=%d, 양도인=%s, SSN=%s%s" % (job_cnt, ht_info['ht_tt_seq'], ht_info['holder_nm'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
+        logt("******************************************************************************************************************")
 
         group_id =  ht_info['group_id']
         ht_tt_seq = ht_info['ht_tt_seq']
@@ -113,10 +114,6 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
         if au_x == '1' or au_x == '2' or au_x == '5' :
             dbjob.update_user_cookieModiDt(worker_id)        
 
-        logt("******************************************************************************************************************")
-        logt("4단계 : JOB_COUNT=%s : HT_TT_SEQ=%d, 양도인=%s, SSN=%s-%s" % (job_cnt, ht_info['ht_tt_seq'], ht_info['holder_nm'], ht_info['holder_ssn1'], ht_info['holder_ssn2']))
-        logt("******************************************************************************************************************")
-
         try:
             # 양도소득분 신고내역
             #driver.get('https://www.wetax.go.kr/etr/lit/b0703/B070302M01.do')
@@ -127,6 +124,12 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             driver.get(wetax_url)
             
             logt("위택스 사이트 오픈", 1.5)
+
+            납부완료여부 = driver.find_element(By.CSS_SELECTOR, '#payYn').text
+            if 납부완료여부 == '납부완료':
+                dbjob.update_htTt_wetaxPaidYn(ht_tt_seq, 'Y')
+                dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', '납부완료')
+                continue
 
             logt("인쇄 버튼 클릭 -> 인쇄 팝업윈도우")
             driver.find_element(By.CSS_SELECTOR, '#btnPayPrint').click()
@@ -153,9 +156,13 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             
             
         except Exception as e:
+            연속실패건수 += 1
             loge(f'{e}')
-            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f'{e}')
-            dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'{e}')
+            dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f'{str(e)[:100]}')
+            if 연속실패건수>3:
+                dbjob.update_autoManager_statusCd(auto_manager_id, 'E', f'연속3회에러 : {str(e)[:100]}')
+                break
+
         else:  # 오류없이 정상 처리시
             dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'S', None)
         

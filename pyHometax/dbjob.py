@@ -333,16 +333,18 @@ def select_next_au3(group_id:str, worker_id:str, start_seq=0, end_seq=0):
         SELECT *  FROM ht_tt 
         WHERE group_id=%s
             AND ht_series_yyyymm = '202405'
-            AND (data_type='AUTO' OR (data_type='SEMI' AND holder_bank_account is null))
+            AND (data_type='AUTO' OR (data_type='SEMI' AND 
+                                (holder_bank_account is null or  holder_bank_account = '')))
             AND step_cd='REPORT' 
             AND au1='S' 
+            AND hometax_reg_num is not null
             AND ( au3 IS NULL OR au3 = '' )
-            AND notify_type_cd = 'POST'
+            -- AND notify_type_cd = 'POST'
     '''
     
-    if worker_id and worker_id.upper() != "MANAGER_ID":
-        sql = sql + " AND reg_id = %s "
-        param = (group_id, worker_id)
+    # if worker_id and worker_id.upper() != "MANAGER_ID":
+    #     sql = sql + " AND reg_id = %s "
+    #     param = (group_id, worker_id)
 
     sql += where1
     sql += where2
@@ -378,11 +380,12 @@ def select_next_au4(group_id:str, worker_id:str, start_seq=0, end_seq=0):
             AND step_cd='REPORT' 
             AND au3='S' 
             AND ( au4 IS NULL OR au4 = '' )
+            AND (wetax_dclrid is not null and  wetax_dclrid != '')
     '''
     
-    if worker_id and worker_id.upper() != "MANAGER_ID":
-        sql = sql + " AND reg_id = %s "
-        param = (group_id, worker_id)
+    # if worker_id and worker_id.upper() != "MANAGER_ID":
+    #     sql = sql + " AND reg_id = %s "
+    #     param = (group_id, worker_id)
 
     sql += where1
     sql += where2
@@ -460,12 +463,12 @@ def select_next_au6(group_id:str, worker_id:str, start_seq=0, end_seq=0):
         WHERE ht.group_id=%s
             AND sec_company_cd != 'SEC07'  -- 토스증권
             AND ht_series_yyyymm = '202405'
-            AND (data_type='AUTO' OR data_type='SEMI')
-            AND (notify_type_cd='EMAIL'  OR notify_type_cd='EMAIL2' OR notify_type_cd='EMAIL_SEC')
-            -- AND step_cd='COMPLETE' 
+            AND data_type IN ('AUTO')
+            AND notify_type_cd IN ('EMAIL', 'EMAIL2', 'EMAIL_SEC')
+            AND step_cd='REPORT_DONE' 
             -- AND ( au1='S' AND au2='S' AND au3='S' AND au4='S' )
-            -- AND ( au6 IS NULL OR au6 = '' )
-            AND ht_tt_seq = 20000
+            AND (au6 IS NULL OR au6 = '')
+            -- AND ht_tt_seq <= 40030
     '''
     
     if worker_id and worker_id.upper() != "MANAGER_ID":
@@ -500,9 +503,32 @@ def select_hTtT_au4_for_dclrid(group_id:str):
         WHERE group_id=%s
             AND ht_series_yyyymm = '202405'
             AND (data_type='AUTO' OR data_type='SEMI')
-            AND step_cd='REPORT' 
+            -- AND step_cd='REPORT' 
             AND au3='S' 
-            AND wetax_dclrid is null 
+            AND (wetax_dclrid is null or wetax_dclrid = '')
+    '''
+    
+    common.logqry(sql, param)
+    with conn.cursor() as curs:
+        curs.execute(sql, param)
+        rs = curs.fetchall()
+        common.logrs(rs)
+        conn.commit()
+    
+    return rs
+
+def select_hTtT_au4_for_dclrid_모든자료(group_id:str):
+    param = (group_id, )
+    rs = None
+        
+    sql = '''
+        SELECT ht_tt_seq, holder_nm, holder_ssn1, concat(holder_ssn1, holder_ssn2) ssn, data_type, step_cd,
+                wetax_dclrid, wetax_reg_num
+        FROM ht_tt 
+        WHERE group_id=%s
+            AND ht_series_yyyymm = '202405'
+            AND data_type IN ('AUTO', 'SEMI')
+            AND wetax_dclrid is not null
     '''
     
     common.logqry(sql, param)
@@ -515,21 +541,25 @@ def select_hTtT_au4_for_dclrid(group_id:str):
     return rs
 
 
+
+
 def update_HtTt_wetaxDclrId(ht_tt_seq, wetax_dclrId, wetax_paid_yn):
     #global conn    
     param = (wetax_dclrId, wetax_paid_yn, ht_tt_seq)
     sql = "UPDATE ht_tt SET wetax_dclrId=%s, wetax_paid_yn=%s WHERE ht_tt_seq=%s"
 
+    affected_cnt = 0
     try:    
         with conn.cursor() as curs:  
             common.logqry(sql, param)
-            curs.execute(sql, param)
+            affected_cnt = curs.execute(sql, param)
             conn.commit()
     except Exception as e:
         # 변경 사항 롤백
         conn.rollback()
         print(f"오류 발생: {e}")
 
+    return affected_cnt
 
 # Group 정보 (Kakao알림톡 정보 포함)
 def select_group_info(group_id:str):
@@ -677,7 +707,7 @@ def update_htTt_hometaxPaidYn(ht_tt_seq, hometax_paid_yn) :
         conn.commit()
 
 # 위택스 납부여부 수정
-def update_htTt_hometaxPaidYn(ht_tt_seq, wetax_paid_yn) :
+def update_htTt_wetaxPaidYn(ht_tt_seq, wetax_paid_yn) :
     param = (wetax_paid_yn, ht_tt_seq)
     sql = "UPDATE ht_tt SET wetax_paid_yn = %s WHERE ht_tt_seq = %s"
     with conn.cursor() as curs:
@@ -1357,6 +1387,13 @@ def select_HtTtFile_ByPk(ht_tt_file_seq) :
         return rs
 
 def insert_or_update_upload_file (file_type, group_id, ht_tt_seq, holder_nm) :
+    param = (ht_tt_seq, file_type)
+    sql = "DELETE FROM ht_tt_file WHERE ht_tt_seq = %s AND attach_file_type_cd=%s"
+    with conn.cursor() as curs:
+        common.logqry(sql, param)
+        curs.execute(sql, param)
+        conn.commit()
+
     curs = conn.cursor(pymysql.cursors.DictCursor)
     sql_httt = "SELECT * FROM ht_tt WHERE ht_tt_seq=%s"
     common.logqry(sql_httt, (ht_tt_seq,))
@@ -1591,26 +1628,42 @@ def select_download_file_list_2단계(group_id):
     param = (group_id,)
 
     sql = '''
-    select ht_tt_seq, t.step_cd , reg_id, data_type, holder_nm, holder_ssn1, holder_ssn2
-        , au1, au2, au3, au4 
-        , IFNULL(au2_msg, '') au2_msg
-        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result1_file_seq = f.ht_tt_file_seq) result1
-        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result2_file_seq = f.ht_tt_file_seq) result2
-        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result3_file_seq = f.ht_tt_file_seq) result3
-        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result4_file_seq = f.ht_tt_file_seq) result4
-        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result5_file_seq = f.ht_tt_file_seq) result5
-        , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result8_file_seq = f.ht_tt_file_seq) result8
-        , IFNULL(t.hometax_income_tax, 0) hometax_income_tax
-        , IFNULL(t.wetax_income_tax, 0) wetax_income_tax
-        , remark
-        , sec_company_cd
-    from ht_tt t
-    where t.ht_series_yyyymm ='202405'
-        and t.group_id = %s
-        and t.au2 = 'S'
-        and t.step_cd IN ('REPORT', 'REPORT_DONE', 'NOTIFY', 'COMPLETE')
-        -- and t.sec_company_cd = 'SEC07'
-    order by 	ht_tt_seq
+        SELECT 
+            t.ht_tt_seq,
+            t.step_cd,
+            t.reg_id,
+            t.data_type,
+            t.holder_nm,
+            t.holder_ssn1,
+            t.holder_ssn2,
+            t.au1,
+            t.au2,
+            t.au3,
+            t.au4,
+            IFNULL(t.au2_msg, '') AS au2_msg,
+            (SELECT CONCAT(path, changed_file_nm) FROM ht_tt_file f WHERE t.result1_file_seq = f.ht_tt_file_seq) AS result1,
+            (SELECT CONCAT(path, changed_file_nm) FROM ht_tt_file f WHERE t.result2_file_seq = f.ht_tt_file_seq) AS result2,
+            (SELECT CONCAT(path, changed_file_nm) FROM ht_tt_file f WHERE t.result3_file_seq = f.ht_tt_file_seq) AS result3,
+            (SELECT CONCAT(path, changed_file_nm) FROM ht_tt_file f WHERE t.result4_file_seq = f.ht_tt_file_seq) AS result4,
+            (SELECT CONCAT(path, changed_file_nm) FROM ht_tt_file f WHERE t.result5_file_seq = f.ht_tt_file_seq) AS result5,
+            (SELECT CONCAT(path, changed_file_nm) FROM ht_tt_file f WHERE t.result8_file_seq = f.ht_tt_file_seq) AS result8,
+            IFNULL(t.hometax_income_tax, 0) AS hometax_income_tax,
+            IFNULL(t.wetax_income_tax, 0) AS wetax_income_tax,
+            t.remark,
+            t.hometax_paid_yn,
+            t.sec_company_cd,
+            IF((SELECT SUM(li.income_amount) - 2500000 FROM ht_tt_list li WHERE t.ht_tt_seq = li.ht_tt_seq) < 0, 0, (SELECT SUM(li.income_amount) - 2500000 FROM ht_tt_list li WHERE t.ht_tt_seq = li.ht_tt_seq)) AS sum_income_amount
+        FROM 
+            ht_tt t
+        WHERE 
+            t.ht_series_yyyymm ='202405'
+            AND t.group_id = %s
+            AND t.au2 = 'S'
+            AND t.step_cd IN ('REPORT', 'REPORT_DONE', 'NOTIFY', 'COMPLETE')
+            -- AND t.sec_company_cd = 'SEC07'
+        ORDER BY 
+            t.ht_tt_seq;
+
         '''
 
     with conn.cursor() as curs: 
@@ -1639,10 +1692,9 @@ def select_download_file_list_4단계(group_id):
         , remark
     from ht_tt t
     where t.ht_series_yyyymm ='202405'
-        and t.group_id = %s
-        -- and (t.au4 = 'S' or t.au4 = 'Y'  or t.au4 = 'X')
-        and t.step_cd IN ('REPORT_DONE', 'NOTIFY', 'COMPLETE')
-        and t.sec_company_cd = 'SEC07'
+        AND t.group_id = %s
+        and (t.au4 = 'S' or t.au4 = 'Y'  or t.au4 = 'X')
+        and t.step_cd IN ('REPORT','REPORT_DONE', 'NOTIFY', 'COMPLETE')
     order by 	ht_tt_seq
         '''
 
