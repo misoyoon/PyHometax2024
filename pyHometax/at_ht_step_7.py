@@ -16,6 +16,12 @@ import ht_file
 import config
 
 '''
+7단계
+다른 단계와는 실행 방법이 다름
+CMD에서만 실행 
+python pyHometax/at_ht_step_7.py 40000 60000 0
+
+
 홈택스, 위택스에서 다운로드 받은 문서에 대한 검증을 하기 위한 PDF 파싱
 각 문서 별로 특정 키워드를 분석하여 원하는 문서가 맞는지 점검한다.
 
@@ -132,7 +138,7 @@ where_common = '''
             AND t.au7 is null
             AND t.step_cd IN ('REPORT', 'REPORT_DONE', 'NOTIFY', 'COMPLETE')
             -- and t.step_cd IN ('REPORT_DONE', 'NOTIFY', 'COMPLETE')
-            -- AND t.sec_company_cd = 'SEC07'
+            AND t.sec_company_cd != 'SEC07'
             -- AND t.ht_tt_seq  = 40171
             and t.data_type IN ('AUTO', 'SEMI')
             -- and t.other_sec_data = 'Y'
@@ -474,86 +480,89 @@ def do_thread_job(task):
             위택스_납부번호 = ''
 
             v_file_type = ''
-            if ht_result['result1'] :
-                v_file_type = "HT_DOWN_1"
-                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result1']}"
-                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-                #logger_d.info(f"filename 1 : {db_filename}")
-                if os.path.exists(db_filename):
-                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-                    if not ret: 
-                        msg += f'\n {v_file_type} 분석내용 불일치'
-                else:
-                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
-            if ht_result['result2'] :
-                v_file_type = "HT_DOWN_2"
-                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result2']}"
-                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-                if os.path.exists(db_filename):
-                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-                    if not ret: 
-                        msg += f'\n {v_file_type} 분석내용 불일치'
-                else:
-                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+            # if ht_result['result1'] :
+            #     v_file_type = "HT_DOWN_1"
+            #     db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result1']}"
+            #     #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+            #     #logger_d.info(f"filename 1 : {db_filename}")
+            #     if os.path.exists(db_filename):
+            #         ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+            #         if not ret: 
+            #             msg += f'\n {v_file_type} 분석내용 불일치'
+            #     else:
+            #         msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
-            if ht_result['result3'] :
-                v_file_type = "HT_DOWN_3"
-                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result3']}"
-                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-                if os.path.exists(db_filename):
-                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-                    홈택스_접수번호 = get_op_value(ops, '홈택스_접수번호', False)
-                    if not ret: 
-                        msg += f'\n {v_file_type} 분석내용 불일치'                    
-                else:
-                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+            # if ht_result['result2'] :
+            #     v_file_type = "HT_DOWN_2"
+            #     db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result2']}"
+            #     #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+            #     if os.path.exists(db_filename):
+            #         ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+            #         if not ret: 
+            #             msg += f'\n {v_file_type} 분석내용 불일치'
+            #     else:
+            #         msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
-            if ht_result['result4'] :
-                v_file_type = "HT_DOWN_4"
-                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result4']}"
-                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-                if os.path.exists(db_filename):
-                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-                    홈택스_납부세액 = get_op_value(ops, '홈택스_납부세액')
-                    if not ret: 
-                        msg += f'\n {v_file_type} 분석내용 불일치'                    
-                else:
-                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+            # if ht_result['result3'] :
+            #     v_file_type = "HT_DOWN_3"
+            #     db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result3']}"
+            #     #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+            #     if os.path.exists(db_filename):
+            #         ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+            #         홈택스_접수번호 = get_op_value(ops, '홈택스_접수번호', False)
+            #         if not ret: 
+            #             msg += f'\n {v_file_type} 분석내용 불일치'                    
+            #     else:
+            #         msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
-            if ht_result['result8'] :
-                v_file_type = "HT_DOWN_8"
-                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result8']}"
-                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-                if os.path.exists(db_filename):
-                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-                    홈택스_납부세액2 = get_op_value(ops, '홈택스_납부세액2')
-                    if not ret: 
-                        msg += f'\n {v_file_type} 분석내용 불일치'                    
-                else:
-                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
-
+            if ht_result['hometax_paid_yn'] != 'Y':
+                if ht_result['result4'] :
+                    v_file_type = "HT_DOWN_4"
+                    db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result4']}"
+                    #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+                    if os.path.exists(db_filename):
+                        ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+                        홈택스_납부세액 = get_op_value(ops, '홈택스_납부세액')
+                        if not ret: 
+                            msg += f'\n {v_file_type} 분석내용 불일치'                    
+                    else:
+                        msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
             
-            if ht_result['result5']  and ht_result['result4']:
-                v_file_type = "WE_DOWN_5"
-                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result5']}"
-                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-                if os.path.exists(db_filename):
-                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-                    위택스_납부번호 = get_op_value(ops, '위택스_납부번호')
-                    위택스_납부세액 = get_op_value(ops, '위택스_납부세액')
-                    if not ret: 
-                        msg += f'\n {v_file_type} 분석내용 불일치'                    
-                else:
-                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+            if ht_result['hometax_paid_yn'] != 'Y':
+                if ht_result['result8'] :
+                    v_file_type = "HT_DOWN_8"
+                    db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result8']}"
+                    #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+                    if os.path.exists(db_filename):
+                        ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+                        홈택스_납부세액2 = get_op_value(ops, '홈택스_납부세액2')
+                        if not ret: 
+                            msg += f'\n {v_file_type} 분석내용 불일치'                    
+                    else:
+                        msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+
+            if ht_result['wetax_paid_yn'] != 'Y':
+                if ht_result['result5'] : #and ht_result['result4']:
+                    v_file_type = "WE_DOWN_5"
+                    db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result5']}"
+                    #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+                    if os.path.exists(db_filename):
+                        ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+                        위택스_납부번호 = get_op_value(ops, '위택스_납부번호')
+                        위택스_납부세액 = get_op_value(ops, '위택스_납부세액')
+                        if not ret: 
+                            msg += f'\n {v_file_type} 분석내용 불일치'                    
+                    else:
+                        msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
 
             # ----------------------------------------------------------------------
             # 문서간 값 비교
             # ----------------------------------------------------------------------
-            if ht_result['data_type'] == 'AUTO' :
-                if ht_result['hometax_reg_num'].replace("-", "") != 홈택스_접수번호.replace("-", ""):
-                    msg += f"\n 홈택스_접수번호 비교 오류={ht_result['hometax_reg_num'].replace('-', '')}:{홈택스_접수번호.replace('-', '')}"
+            #if ht_result['data_type'] == 'AUTO' :
+            #    if ht_result['hometax_reg_num'].replace("-", "").strip() != 홈택스_접수번호.replace("-", ""):
+            #        msg += f"\n 홈택스_접수번호 비교 오류={ht_result['hometax_reg_num'].replace('-', '')}:{홈택스_접수번호.replace('-', '')}"
 
             # 홈택스, 위택스 세액 비교 => 10분의1 인지 검사
             if ht_result['data_type'] == 'SEMI':

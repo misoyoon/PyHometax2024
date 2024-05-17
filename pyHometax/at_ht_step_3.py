@@ -203,7 +203,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 driver.switch_to.default_content()
                 driver.find_element(By.CSS_SELECTOR, "#cmnPopup_dlgp > div > button").click()
                 continue
-                
+            logt(f"검색결과 건수 = {검색결과건수}")
             # 첫번째 조회결과 클릭
             driver.find_element(By.CSS_SELECTOR, '#tbl_listDlgpUser > tbody > tr:nth-child(1) > td:nth-child(1) > span').click()
             time.sleep(0.1)
@@ -225,6 +225,8 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 # 에러처리하지 않고 성공처리하기, 다만 au_history에 이력 남기기
                 # dbjob.update_HtTt_AuX(AU_X, ht_tt_seq, 'E', f"양도인명불일치 : DB={ht_info['holder_nm']}, 위택스={양도인명}")
             
+            logt(f"양도인명 확인 현재 처리자={ht_info['holder_nm']}, 조회자={양도인명}")
+
             #국적선택
             # [다음] 버튼 클릭
             driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
@@ -278,6 +280,8 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             driver.find_element(By.CSS_SELECTOR, "#btnSchHomeTax").click()
             time.sleep(1.5)
             
+
+            선택한_홈택스_접수번호 = ""
             홈택스_접수번호 = ht_info['hometax_reg_num']
             if 홈택스_접수번호: 홈택스_접수번호 = 홈택스_접수번호.replace('-', '')
             
@@ -294,6 +298,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                     if td2_text == 홈택스_접수번호: # or (ht_info['data_type'] == 'SEMI'):
                         driver.find_element(By.CSS_SELECTOR, f"label[for='chkItem_{idx}']").click()
                         driver.find_element(By.CSS_SELECTOR, "#btnHomeSel").click() # [선택]
+                        선택한_홈택스_접수번호 = td2_text
                         is_found = True
 
                         # 여기서 SEMI 업데이트 하면 암됨!!!
@@ -312,6 +317,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
                 logt(f"홈택스신고 조회결과 없음  ====================================>  다음 양도인 처리 진행")
                 continue
             else:
+                logt(f"홈택스 접수번호 비교 : DB={홈택스_접수번호}, 현재선택={선택한_홈택스_접수번호}")
                 # 팝업닫기 : 홈택스에서 신고된 내용을 자동채움하였습니다. 계속 진행하세요.                 
                 driver.find_element(By.CSS_SELECTOR, "#btnOk").click()
             

@@ -42,10 +42,10 @@ var params = {
 }
 
 params.titxaDclrDVO.dclrYmdBgng = "20240501"
-params.titxaDclrDVO.dclrYmdEnd  = "20240512"
+params.titxaDclrDVO.dclrYmdEnd  = "20240514"
 params.pagerVO.pageNo  		= 1
-params.pagerVO.rowCount  	= 5000
-params.pagerVO.totalCount  	= 17790
+params.pagerVO.rowCount  	= 3000
+params.pagerVO.totalCount  	= 18353
 call_wetax_list(params)
 
 
@@ -73,7 +73,7 @@ file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(mes
 logger = logging.getLogger()
 logger.addHandler(file_handler)
 
-sys.path.append("E:\\Temp\\wetax2")
+sys.path.append("E:\\Temp\\wetax_dclr_0514")
 import result_page_1 as result
 
 
@@ -134,7 +134,7 @@ def main():
 
     #FIXME
     #print("작업 확인을 위한 중간에 고의 중단")
-    sys.exit()
+    #sys.exit()
 
     rs_ht_info = dbjob.select_hTtT_au4_for_dclrid('the1')
     logger.info(f"dclrId가 없는 위택스 문서 다운로드 rs LEN= {len(rs_ht_info)}")

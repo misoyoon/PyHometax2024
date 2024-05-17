@@ -6,7 +6,7 @@ LOG_LEVEL = 'DEBUG'
 
 
 # 홈페이지가 느릴 때 가중치
-TIME_WEIGHT = 1.2
+TIME_WEIGHT = 1.0
 
 # 주석처리
 # group_id = 'the1'
@@ -16,6 +16,9 @@ FILE_ROOT_DIR_BASE = "U:\\TaxAssist\\files\\HtTt\\"
 AUTO_STEP_LOG_DIR   = "V:/PyHometax_Log_2024/AutoStep"
 # 감시watcher로그 (2군데서 사용: 자동신고 watcher, WebSocket watcher)
 WATCHER_LOG_DIR     = "V:/PyHometax_Log_2024/Watcher"
+
+# 잡동사니 로그
+ETC_LOG_DIR     = "V:/PyHometax_Log_2024/ETC"
 
 # 자동신고 진행사항 LOG 웹소켓
 WEBSOCKET_SERVER_IP   = '61.38.105.227'

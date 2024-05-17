@@ -73,7 +73,7 @@ file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(mes
 logger = logging.getLogger()
 logger.addHandler(file_handler)
 
-sys.path.append("E:\\Temp\\wetax2")
+sys.path.append("E:\\Temp\\wetax_dclr_0514")
 
 print("import start")
 
@@ -144,8 +144,14 @@ def getWetaxData():
 
         key = f"{row['txpNm']}_{row['tnenc'][0:6]}"
         if key in wetax_map:
-            print(f"    {wetax_map[key]}")
-            print(f"2=> {weinfo} <== 중복2")
+            중복신청_이전의_신고_미취소 = ''
+            취소URL = ''
+            if wetax_map[key]['신고완료_취소'] == '신고완료':
+                중복신청_이전의_신고_미취소 = '    ###### 미취소 => 취소 필요'
+                취소URL = f"\nhttps://www.wetax.go.kr/etr/lit/b0703/B070302M02.do?dclrId={wetax_map[key]['dclrId']}&objCd=T&objType=P&bgDclrId=&linkTyp="
+
+            print(f"\n{wetax_map[key]}{중복신청_이전의_신고_미취소}{취소URL}")
+            print(f"{weinfo} <== 중복신고")
         
         wetax_map[key] = weinfo
 
