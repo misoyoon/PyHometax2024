@@ -173,7 +173,7 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             driver.switch_to.frame(0)
             
             # 검색결과가 0보다 클때까지 대기 (여기서 오래 걸리는 경우가 있음)
-            for i in range(10):
+            for i in range(15):
                 검색결과수 = driver.find_element(By.ID, "spnTotCnt").text
                 logt(f"위임자목록 조회 결과 = {검색결과수}")
                 if int(검색결과수) > 0: break
@@ -227,11 +227,26 @@ def do_task(driver: WebDriver, user_info, verify_stamp):
             
             logt(f"양도인명 확인 현재 처리자={ht_info['holder_nm']}, 조회자={양도인명}")
 
+            # 전화번호 고정 ??
+            driver.find_element(By.CSS_SELECTOR, '#txpTelno').clear()
+            driver.find_element(By.CSS_SELECTOR, '#txpTelno').send_keys('025140910')
+
             #국적선택
             # [다음] 버튼 클릭
             driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
             ret = sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')
-            if ret == 'ALERT_ERROR':
+            #납세자의 국적을 입력하여 주십시요.
+            if ret == True:
+                ...
+            elif ret.find("납세자 이메일 형식이 올바르지 않습니다") >=0:
+                # FIXME
+                # the1kks@hanmail.net  고정 ??
+                driver.find_element(By.CSS_SELECTOR, '#txpEaddrId').send_keys('the1kks')
+                driver.find_element(By.CSS_SELECTOR, '#txpEaddrDmn').send_keys('hanmail.net')
+                time.sleep(0.5)
+                driver.find_element(By.CSS_SELECTOR, '#btnNext').click()
+                sc.click_alert(driver, '저장 후 다음화면으로 이동 하시겠습니까?')
+            elif ret == 'ALERT_ERROR':
                 logt("국적 선택 필요")
 
                 driver.find_element(By.CSS_SELECTOR, '#btnTrnrNtnSrch').click()

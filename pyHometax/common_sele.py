@@ -110,17 +110,19 @@ def click_alert(driver: WebDriver, msg, sleep=0.5) -> str:
     try:
         WebDriverWait(driver, 5).until(EC.alert_is_present(), 'Timed out waiting for alerts to appear')
         alert= driver.switch_to.alert
+        cur_alert_text =  alert.text
         logt("(f)Alert 예상메세지: %s" % msg)
-        logt("(f)Alert 실제메세지: %s" % alert.text)
-        if alert.text.find(msg)>=0:
+        logt("(f)Alert 실제메세지: %s" % cur_alert_text)
+        if cur_alert_text.find(msg)>=0:
             alert.accept()
             return 'TRUE'
         else:
             alert.accept()
-            return alert.text
+            return cur_alert_text
     except TimeoutException:
         return 'TimeoutException'
-    except :
+    except Exception as e:
+        logt("Exception: %s" % str(e))  # 로그에 예외 메시지를 기록
         return 'ALERT_ERROR'
 
     # try:

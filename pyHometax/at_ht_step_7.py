@@ -134,13 +134,12 @@ where_common = '''
             AND t.group_id = %s
             AND t.au2 = 'S'
             AND t.au4 = 'S'
-            -- AND (t.au7 is null or t.au7 = 'E')
-            AND t.au7 is null
+            and t.data_type IN ('AUTO', 'SEMI')
             AND t.step_cd IN ('REPORT', 'REPORT_DONE', 'NOTIFY', 'COMPLETE')
             -- and t.step_cd IN ('REPORT_DONE', 'NOTIFY', 'COMPLETE')
-            AND t.sec_company_cd != 'SEC07'
+            AND t.au7 is null
+            -- AND t.sec_company_cd != 'SEC07'
             -- AND t.ht_tt_seq  = 40171
-            and t.data_type IN ('AUTO', 'SEMI')
             -- and t.other_sec_data = 'Y'
 
 '''
@@ -481,40 +480,40 @@ def do_thread_job(task):
 
             v_file_type = ''
 
-            # if ht_result['result1'] :
-            #     v_file_type = "HT_DOWN_1"
-            #     db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result1']}"
-            #     #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-            #     #logger_d.info(f"filename 1 : {db_filename}")
-            #     if os.path.exists(db_filename):
-            #         ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-            #         if not ret: 
-            #             msg += f'\n {v_file_type} 분석내용 불일치'
-            #     else:
-            #         msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+            if ht_result['result1'] :
+                v_file_type = "HT_DOWN_1"
+                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result1']}"
+                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+                #logger_d.info(f"filename 1 : {db_filename}")
+                if os.path.exists(db_filename):
+                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+                    if not ret: 
+                        msg += f'\n {v_file_type} 분석내용 불일치'
+                else:
+                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
-            # if ht_result['result2'] :
-            #     v_file_type = "HT_DOWN_2"
-            #     db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result2']}"
-            #     #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-            #     if os.path.exists(db_filename):
-            #         ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-            #         if not ret: 
-            #             msg += f'\n {v_file_type} 분석내용 불일치'
-            #     else:
-            #         msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+            if ht_result['result2'] :
+                v_file_type = "HT_DOWN_2"
+                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result2']}"
+                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+                if os.path.exists(db_filename):
+                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+                    if not ret: 
+                        msg += f'\n {v_file_type} 분석내용 불일치'
+                else:
+                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
-            # if ht_result['result3'] :
-            #     v_file_type = "HT_DOWN_3"
-            #     db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result3']}"
-            #     #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
-            #     if os.path.exists(db_filename):
-            #         ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
-            #         홈택스_접수번호 = get_op_value(ops, '홈택스_접수번호', False)
-            #         if not ret: 
-            #             msg += f'\n {v_file_type} 분석내용 불일치'                    
-            #     else:
-            #         msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
+            if ht_result['result3'] :
+                v_file_type = "HT_DOWN_3"
+                db_filename = f"{config.FILE_ROOT_DIR_BASE}the1\\{ht_result['result3']}"
+                #fullpath = dir_work + ht_file.get_file_name_by_type(v_file_type)
+                if os.path.exists(db_filename):
+                    ret, ops = check_pdf_content(ht_result, db_filename, v_file_type, logger_d, logger_s)
+                    홈택스_접수번호 = get_op_value(ops, '홈택스_접수번호', False)
+                    if not ret: 
+                        msg += f'\n {v_file_type} 분석내용 불일치'                    
+                else:
+                    msg += f'\n {v_file_type} 파일 없음, path={db_filename}'
 
             if ht_result['hometax_paid_yn'] != 'Y':
                 if ht_result['result4'] :

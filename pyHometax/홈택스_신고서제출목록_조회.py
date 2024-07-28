@@ -35,6 +35,80 @@ log_filename = f"{config.AUTO_STEP_LOG_DIR}/홈택스_전체_신고목록_{now}.
 print(f"Log File={log_filename}")
 logger = set_logger(log_filename)    # common.py 파일에 있음
 
+
+
+
+# 관리자 인증서 로그인 (공인인증 -> 세무대리 로그인)
+def login_2step(driver):
+    logt ("관리인증서  로그인 시작")
+
+    # 1) 홈택스 접속
+
+    logt("홈택스 메인 화면 이동 및 오픈 대기(10초)")
+    driver.get('https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml&tmIdx=&tm2lIdx=&tm3lIdx=')
+    #driver.get("https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml")
+    driver.implicitly_wait(10)
+
+    #  2) 화면 상단 "로그인" 클릭
+    logt("화면상단 [로그인] 버튼 클릭", 2)
+    driver.find_element(By.CSS_SELECTOR, '#textbox915').click()
+
+    #  3) iframe 전환 : 로그인화면은 화면전체가 iframe
+    logt("IFrame(=txppIframe) 전환", 2)
+    iframe1 = driver.find_element(By.CSS_SELECTOR, '#txppIframe')
+    driver.switch_to.frame(iframe1)
+
+    print("[공동,금융인증서] 버튼 클릭", 2)
+    driver.find_element(By.CSS_SELECTOR, '#anchor22').click()
+
+
+    #  5) iframe 전환 : 로그인화면은 화면전체가 iframe
+    logt("IFrame(=dscert) 전환", 2)
+    #sc.move_iframe("dscert")
+    driver.switch_to.frame("dscert")
+
+    # 6) 인증서 로그인
+    logt("[인증서 비밀번호] 값입력", 1)
+    in_cert_login_pw = driver.find_element(By.CSS_SELECTOR, '#input_cert_pw')
+    in_cert_login_pw.send_keys('kksjns1203!')
+
+    logt("[확인]클릭 =>인증서 로그인]", 1)
+    driver.find_element(By.CSS_SELECTOR, '#btn_confirm_iframe').click()
+
+    # 7) 세무대리인 확인 Alert 창
+    logt("(Alert창) 세무대리인로그인 확인]", 2)
+    try:
+        # ==> 이코드는 동작 안함 WebDriverWait(driver, 10).until(EC.alert_is_present())
+        alert = driver.switch_to.alert
+        # Alert창 메세지 출력
+        print(alert.text)
+        # 확인 버튼
+        alert.accept()
+    except:
+        loge("주의 할 것!! 이상한게도 한번은 exception이 발생한다!!!!!")
+        alert = driver.switch_to.alert
+        # Alert창 메세지 출력
+        print(alert.text)
+        # 확인 버튼
+        alert.accept()
+        
+    # 세무대리인 관리번호 로그인(P24XXX)
+    logt("IFrame(=txppIframe) 전환", 2)
+    iframe1 = driver.find_element(By.CSS_SELECTOR, '#txppIframe')
+    driver.switch_to.frame(iframe1)
+
+    logt("[아이디] 값 입력", 0.1)
+    driver.find_element(By.ID, 'input1').send_keys('P24335')
+    logt("[비번] 값 입력", 0.1)
+    driver.find_element(By.ID, 'input2').send_keys('kksjns1203!')
+    logt("[로그인] 클릭", 0.5)
+    driver.find_element(By.ID, 'trigger41').click()
+
+    # id: input1
+    # pw: input2
+    # 로그인 : trigger41
+    logt("업무담당자 로그인 완료 !!!", 1)
+
 if __name__ == '__main__':
 
     # 셀레니움 드라이버
@@ -50,16 +124,19 @@ if __name__ == '__main__':
         #######################################################################################
 
         window_handles = driver.window_handles
-        main_window_handle = window_handles[0]
+        main_window_handle = window_handles[0] 
         print(main_window_handle)
         logt("메인윈도우 핸들: %s" % main_window_handle)
 
-        logt("메뉴이동 : '신고/납부' 메뉴 이동")
-        url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml&tmIdx=4&tm2lIdx=0405050000&tm3lIdx='
-        driver.get(url)
-
+        # logt("메뉴이동 : '신고/납부' 메뉴 이동")
+        # url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml&tmIdx=&tm2lIdx=&tm3lIdx='
+        # driver.get(url)
+        login_2step(driver)
+        logt("세금신고 -> 신고내역 조회 이동 하기", 2)
         # TODO
         # 수동로그인
+        url = 'https://www.hometax.go.kr/websquare/websquare.wq?w2xPath=/ui/pp/index_pp.xml&tmIdx=4&tm2lIdx=0405050000&tm3lIdx='
+        driver.get(url)
 
         logt("iframe 이동", 2)
         sc.move_iframe(driver)
@@ -75,7 +152,7 @@ if __name__ == '__main__':
         time.sleep(0.5)
         logt("조회클릭")
         driver.find_element(By.ID, 'trigger70_UTERNAAZ31').click()
-        time.sleep(15)
+        time.sleep(10)
         alt_msg = sc.click_alert(driver, "조회가 완료되었습니다.")
 
 
@@ -97,7 +174,7 @@ if __name__ == '__main__':
         select.select_by_visible_text("100건")
         time.sleep(0.2)
         driver.find_element(By.ID, 'trigger6_UTERNAAZ31').click()
-        time.sleep(15)
+        time.sleep(22)
         
         alt_msg = sc.click_alert(driver, "조회가 완료되었습니다.")
 
@@ -112,7 +189,7 @@ if __name__ == '__main__':
         trs = driver.find_elements(By.CSS_SELECTOR, "#ttirnam101DVOListDes_body_tbody > tr")
         현재페이지_ROW_수 = len(trs)
 
-        시작페이지_index = 100   # 1 베이스 시작페이지 지정 (오류 후 재시작용)
+        시작페이지_index = 1   # 1 베이스 시작페이지 지정 (오류 후 재시작용)
         추가row수 = 0
         for i in range(시작페이지_index, 조회_페이지수+1):  # 시작은 1부터 ~
             p_start = time.time()
@@ -125,7 +202,7 @@ if __name__ == '__main__':
             else:
                 driver.find_element(By.ID, f'pglNavi887_page_{i}').click()
 
-            time.sleep(7)
+            time.sleep(20)
             alt_msg = sc.click_alert(driver, "조회가 완료되었습니다.")
             if alt_msg.find('이중로그인 방지로 통합인증이 종료되었습니다') >= 0:
                 logt("이중로그인으로 프로그램 종료!!!!!")

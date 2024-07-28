@@ -58,6 +58,7 @@ def select_download_file_list_4단계(group_id):
         -- , (select concat(path, changed_file_nm)  from ht_tt_file f where t.result8_file_seq = f.ht_tt_file_seq) result8
         , IFNULL(t.hometax_income_tax, 0) hometax_income_tax
         , IFNULL(t.wetax_income_tax, 0) wetax_income_tax
+        , wetax_paid_yn
         , remark
     from ht_tt t
     where t.ht_series_yyyymm ='202405'
@@ -121,7 +122,9 @@ print(f"4단계 다운로드 파일 점검, 갯수 = {len(rs)}")
 for ht in rs:
 
     ht_tt_seq = ht['ht_tt_seq']
-    print(f"{ht_tt_seq} 처리 중 ...")
+    if ht_tt_seq % 1000 == 0:
+        print(f"{ht_tt_seq} 처리 중 ...")
+        
     ret = ''
     try :
 
@@ -132,8 +135,10 @@ for ht in rs:
             continue
 
         # 세금이 10원 이상,  홈택스에서 이미 납부했으면 위택스에서 납부할 가능성이 있음
-        if ht['au4'] == 'S' or ht['au4'] == 'Y':
-            if ht['hometax_income_tax'] < 100 and ht['result5'] is None: 
+        if ht['au4'] == 'S':
+            if ht['wetax_paid_yn'] == 'Y':
+                ret += '.'    # 정상 
+            elif ht['hometax_income_tax'] < 100 and ht['result5'] is None: 
                 ret += '.'    # 정상 
             elif ht['hometax_income_tax'] >= 100 and ht['result5'] is None: 
                 ret += '5.'   # 비정상

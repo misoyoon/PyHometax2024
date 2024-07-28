@@ -445,6 +445,33 @@ def select_next_au5(group_id:str, worker_id:str, start_seq=0, end_seq=0):
     return rs
 
 
+
+# 5단계 - 홈택스 증빙자료 업로드시 PDF 병합용
+def select_HtTt_증빙자료업로드_PDF병합(group_id:str):
+    param = (group_id, )
+    rs = None
+
+    sql = '''
+        SELECT ht_tt_seq FROM ht_tt 
+        WHERE group_id=%s
+            AND ht_series_yyyymm = '202405'
+            AND (data_type='AUTO' OR data_type='SEMI')
+            AND step_cd='COMPLETE' 
+            -- AND au1='S' 
+            -- AND ( au5 IS NULL OR au5 = '' )
+            -- AND audit_tmp3 = '반자동 담당자신고'
+            and ht_tt_seq = 40306
+        ORDER BY ht_tt_seq asc 
+        '''
+    
+    common.logqry(sql, param)
+    with conn.cursor() as curs:
+        curs.execute(sql, param)
+        rs = curs.fetchall()
+        common.logrs(rs)
+        conn.commit()
+        return rs
+
 # 6단계 - 카카오톡 & 메일 발송 
 # 조건1: 토스증권은 제외
 # 조건2: notify_type_cd = MAIL, MAIL2 만

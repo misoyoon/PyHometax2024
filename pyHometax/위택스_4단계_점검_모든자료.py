@@ -59,7 +59,7 @@ import dbjob
 import sys
 
 
-DATA_KEY = "result_page_2"
+DATA_KEY = "result_page_1"
 
 # 로깅 설정
 current_time = datetime.now()
@@ -73,28 +73,29 @@ file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(mes
 logger = logging.getLogger()
 logger.addHandler(file_handler)
 
-sys.path.append("E:\\Temp\\wetax_dclr_0514")
+sys.path.append("E:\\Temp\\wetax_dclr_0519")
 
-print("import start")
+logger.info("import start")
 
 import result_page_1 as result1
-import result_page_2 as result2
-import result_page_3 as result3
-import result_page_4 as result4
-import result_page_5 as result5
-import result_page_6 as result6
+# import result_page_2 as result2
+# import result_page_3 as result3
+# import result_page_4 as result4
+# import result_page_5 as result5
+# import result_page_6 as result6
 
-print("import finish")
+logger.info("import finish")
 
 def getWetaxData():
     wetax_data1 = result1.data['titxaDclrDVOList']
-    wetax_data2 = result2.data['titxaDclrDVOList']
-    wetax_data3 = result3.data['titxaDclrDVOList']
-    wetax_data4 = result4.data['titxaDclrDVOList']
-    wetax_data5 = result5.data['titxaDclrDVOList']
-    wetax_data6 = result6.data['titxaDclrDVOList']
+    # wetax_data2 = result2.data['titxaDclrDVOList']
+    # wetax_data3 = result3.data['titxaDclrDVOList']
+    # wetax_data4 = result4.data['titxaDclrDVOList']
+    # wetax_data5 = result5.data['titxaDclrDVOList']
+    # wetax_data6 = result6.data['titxaDclrDVOList']
 
-    wetax_data = wetax_data1 + wetax_data2 + wetax_data3 + wetax_data4 + wetax_data5 + wetax_data6
+    #wetax_data = wetax_data1 + wetax_data2 + wetax_data3 + wetax_data4 + wetax_data5 + wetax_data6
+    wetax_data = wetax_data1 
     wetax_data = list(reversed(wetax_data))
     logger.info(f"가공 전 wetax_data LEN= {len(wetax_data)}")
     
@@ -135,8 +136,8 @@ def getWetaxData():
 
 
         # if row['elpn'] in elpn_map:
-        #     print(f"    {row['elpn']} ==> {weinfo}")
-        #     print(f"==> {row['elpn']} ==> {weinfo} <== 중복")
+        #     logger.info(f"    {row['elpn']} ==> {weinfo}")
+        #     logger.info(f"==> {row['elpn']} ==> {weinfo} <== 중복")
         #     elpn_map[row['elpn']] = weinfo
         # elpn_map[row['elpn']] = weinfo
 
@@ -150,8 +151,8 @@ def getWetaxData():
                 중복신청_이전의_신고_미취소 = '    ###### 미취소 => 취소 필요'
                 취소URL = f"\nhttps://www.wetax.go.kr/etr/lit/b0703/B070302M02.do?dclrId={wetax_map[key]['dclrId']}&objCd=T&objType=P&bgDclrId=&linkTyp="
 
-            print(f"\n{wetax_map[key]}{중복신청_이전의_신고_미취소}{취소URL}")
-            print(f"{weinfo} <== 중복신고")
+            logger.info(f"\n{wetax_map[key]}{중복신청_이전의_신고_미취소}{취소URL}")
+            logger.info(f"{weinfo} <== 중복신고")
         
         wetax_map[key] = weinfo
 
@@ -160,28 +161,29 @@ def getWetaxData():
 
 def main():
     affected_cnt = 0
-    print("#" * 50)
+    logger.info("#" * 50)
     wetax_data, elpn_map = getWetaxData()
     logger.info(f"가공 후 wetax_data LEN= {len(wetax_data)}")
 
     #FIXME
-    #print("작업 확인을 위한 중간에 고의 중단")
+    #logger.info("작업 확인을 위한 중간에 고의 중단")
     # sys.exit()
 
     rs_ht_info = dbjob.select_hTtT_au4_for_dclrid_모든자료('the1')
     logger.info(f"문서 다운로드 rs LEN= {len(rs_ht_info)}")
 
 
-    print("#" * 50)
+    logger.info("#" * 50)
     for row in rs_ht_info:
         key = f"{row['holder_nm']}_{row['holder_ssn1']}"
         if row['wetax_dclrid']:
             if key in wetax_data:
                 if wetax_data[key]['dclrId'] != row['wetax_dclrid']:
-                    print(f"DB=>{row}")
-                    print(f"    Changed!!! {row['wetax_dclrid']}  ===>>>  {wetax_data[key]['dclrId']}")
+                    logger.info(f"DB=>{row}")
+                    logger.info(f"    Changed!!! {row['wetax_dclrid']}  ===>>>  {wetax_data[key]['dclrId']}")
             else:
-                print(f'{key} 가 없음')
+                logger.info(f'{key} 가 없음')
+                ...
 
 conn = dbjob.connect_db()
 main()    

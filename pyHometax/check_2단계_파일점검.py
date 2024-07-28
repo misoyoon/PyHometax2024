@@ -138,7 +138,9 @@ for ht in rs:
     if ht_tt_seq in passlist:
         continue
 
-    print(f"{ht_tt_seq} 처리 중 ...")
+    if ht_tt_seq % 1000 == 0:
+        print(f"{ht_tt_seq} 처리 중 ...")
+
     ret = ''
     try :
         if ht['au2'] == 'S':
@@ -194,7 +196,9 @@ for ht in rs:
                     else :
                         ret += '.'           # 정상
             else:
-                if ht['hometax_income_tax'] >= 10:
+                if ht['hometax_paid_yn'] == 'Y':
+                    ret += '.'
+                elif ht['hometax_income_tax'] >= 10:
                     ret += '4X'
 
 
@@ -213,7 +217,9 @@ for ht in rs:
                     else :
                         ret += '.'
             else:
-                if ht['hometax_income_tax'] >= 10000000:
+                if ht['hometax_paid_yn'] == 'Y' :
+                    ret += '.'
+                elif ht['hometax_income_tax'] >= 10000000:
                     ret += '8X'                
                 else :
                     ret += '.'         
